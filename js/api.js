@@ -125,7 +125,7 @@ class GameAPI {
 let gameAPI = null;
 
 function initializeAPI() {
-  gameAPI = new GameAPI('/api/proxy');
+  gameAPI = new GameAPI(CONFIG.GS_WEB_APP_URL);
   console.log('✅ GameAPI 已初始化（使用 Vercel Proxy）');
   return gameAPI;
 }
