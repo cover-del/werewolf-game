@@ -23,9 +23,15 @@ export default async function handler(req, res) {
       body: JSON.stringify(req.body)
     });
 
-    const json = await response.json();
-    return res.status(200).json(json);
+    const text = await response.text();
 
+    // 嘗試轉成 JSON
+    try {
+      const json = JSON.parse(text);
+      return res.status(200).json(json);
+    } catch {
+      return res.status(200).json({ raw: text });
+    }
   } catch (err) {
     return res.status(500).json({
       error: 'Proxy error',
