@@ -70,22 +70,19 @@ async function handleSubmit() {
       : await gameAPI.registerPlayer(name, password);
 
     // ❌ 核心判斷
-    if (res.error || !res.playId) {
-      errorDiv.textContent = res.error || '登入失敗，請稍後再試';
+    if (!res.success) {
+      errorDiv.textContent = res.error || '登入失敗';
       errorDiv.classList.add('show');
       submitBtn.disabled = false;
       submitBtn.classList.remove('loading');
       return;
     }
-
-    // 成功
-    errorDiv.classList.remove('show');
-    successDiv.textContent = isLogin ? '登入成功！進入遊戲中...' : '註冊成功！進入遊戲中...';
-    successDiv.classList.add('show');
-
-    // 儲存
-    localStorage.setItem(CONFIG.STORAGE_KEYS.playId, res.playId);
-    localStorage.setItem(CONFIG.STORAGE_KEYS.playerName, res.name || '');
+    
+    const player = res.data;
+    
+    // 一定存在
+    localStorage.setItem(CONFIG.STORAGE_KEYS.playId, player.playId);
+    localStorage.setItem(CONFIG.STORAGE_KEYS.playerName, player.name || '');
 
     setTimeout(() => {
       window.location.href = 'index.html';
