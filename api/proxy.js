@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  // 允許 CORS
+  // ✅ 允許 CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -14,6 +14,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    // 你的 GAS Web App URL
     const GAS_URL =
       'https://script.google.com/macros/s/1RAmHB34wjl9QpmiC5CPsjybiuG-cujkcGYF5kfORtUW7Ic4dTi9n7_dd/exec';
 
@@ -25,7 +26,7 @@ export default async function handler(req, res) {
 
     const text = await response.text();
 
-    // 嘗試轉成 JSON
+    // 嘗試轉 JSON，如果不是 JSON，回傳原始文字
     try {
       const json = JSON.parse(text);
       return res.status(200).json(json);
