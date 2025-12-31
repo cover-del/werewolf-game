@@ -1,17 +1,13 @@
 export default async function handler(req, res) {
-  // 允許 CORS（給前端）
+  // 允許 CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   // 預檢請求
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   try {
     const GAS_URL =
@@ -25,7 +21,8 @@ export default async function handler(req, res) {
 
     const text = await response.text();
 
-    // 嘗試轉成 JSON
+    if (!response.ok) return res.status(response.status).json({ error: 'GAS error', raw: text });
+
     try {
       const json = JSON.parse(text);
       return res.status(200).json(json);
@@ -33,9 +30,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ raw: text });
     }
   } catch (err) {
-    return res.status(500).json({
-      error: 'Proxy error',
-      detail: err.message
-    });
+    return res.status(500).json({ error: 'Proxy error', detail: err.message });
   }
 }
