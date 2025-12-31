@@ -3,12 +3,12 @@
  */
 
 const CONFIG = {
-  // ===== API（使用 Vercel Proxy）=====
+  // ===== API 設定（Vercel Proxy）=====
   GS_WEB_APP_URL: '/api/proxy',
 
   // ===== 遊戲設定 =====
-  POLL_INTERVAL_MS: 1500,
-  DEFAULT_PLAYERS: 6,
+  POLL_INTERVAL_MS: 1500,      // 輪詢間隔（毫秒）
+  DEFAULT_PLAYERS: 6,           // 預設玩家人數
 
   // ===== 角色分配 =====
   ROLE_DISTRIBUTION: {
@@ -20,7 +20,7 @@ const CONFIG = {
   },
 
   // ===== 管理員設定 =====
-  ADMIN_PASSWORD: '1234',
+  ADMIN_PASSWORD: '1234',      // 預設管理員密碼
 
   // ===== 角色名稱對應 =====
   ROLE_NAMES: {
@@ -39,5 +39,21 @@ const CONFIG = {
   }
 };
 
-// 可選：檢查
-console.log('CONFIG loaded', CONFIG);
+/**
+ * 驗證配置
+ */
+function validateConfig() {
+  if (!CONFIG.GS_WEB_APP_URL || CONFIG.GS_WEB_APP_URL.includes('YOUR_SCRIPT_ID')) {
+    console.error('❌ 錯誤：GS_WEB_APP_URL 未設定！請修改 js/config.js 中的 GS_WEB_APP_URL');
+    return false;
+  }
+  console.log('✅ 配置驗證通過');
+  return true;
+}
+
+// 在頁面載入時驗證配置
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', validateConfig);
+} else {
+  validateConfig();
+}
