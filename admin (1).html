@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>狼人殺 Admin 管理</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<div class="container">
+  <!-- 登入區域 -->
+  <div class="login-area" id="loginArea">
+    <h2>🔐 Admin 管理登入</h2>
+    <div class="form-group">
+      <label for="adminPassword">管理員密碼</label>
+      <input type="password" id="adminPassword" placeholder="輸入管理員密碼">
+    </div>
+    <button class="btn-login" onclick="loginAdmin()">登入</button>
+    <div class="error-msg" id="loginError"></div>
+  </div>
+
+  <!-- 管理面板 -->
+  <div class="admin-panel" id="adminPanel">
+    <!-- 頁頭 -->
+    <div class="admin-header">
+      <h2>🎮 房間管理面板</h2>
+      <button class="btn-danger" onclick="logoutAdmin()">登出</button>
+    </div>
+
+    <!-- 統計卡片 -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-number" id="totalRooms">0</div>
+        <div class="stat-label">總房間數</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="totalPlayers">0</div>
+        <div class="stat-label">在線玩家</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="inactiveRooms">0</div>
+        <div class="stat-label">閒置房間</div>
+      </div>
+    </div>
+
+    <!-- 房間管理 -->
+    <div class="card">
+      <h3>房間列表</h3>
+      <div class="control-buttons">
+        <button class="btn-secondary" onclick="refreshRooms()">🔄 刷新列表</button>
+        <button class="btn-danger" onclick="deleteAllRooms()">🗑️ 刪除全部</button>
+      </div>
+      <div class="room-list" id="roomList">
+        <div class="empty-message">載入中...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/admin.js"></script>
+
+</body>
+</html>

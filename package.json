@@ -1,0 +1,22 @@
+{
+  "name": "werewolf-game-github-pages",
+  "version": "1.0.0",
+  "description": "線上狼人殺遊戲 - GitHub Pages 版本",
+  "main": "index.js",
+  "scripts": {
+    "dev": "http-server -p 8000 -c-1",
+    "build": "echo 'No build step needed for static site'",
+    "deploy": "git add . && git commit -m 'Deploy to GitHub Pages' && git push origin main",
+    "test": "echo 'No tests configured'"
+  },
+  "keywords": [
+    "werewolf",
+    "game",
+    "github-pages"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>狼人殺帳號登入</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+
+<div class="container">
+  <h1 id="formTitle">登入帳號</h1>
+  
+  <div class="form-group">
+    <label for="username">暱稱</label>
+    <input type="text" id="username" placeholder="輸入您的暱稱">
+  </div>
+  
+  <div class="form-group">
+    <label for="password">密碼</label>
+    <input type="password" id="password" placeholder="輸入密碼">
+  </div>
+  
+  <div class="button-group">
+    <button class="btn-login" id="submitBtn">登入</button>
+    <button class="btn-register" id="toggleBtn">註冊</button>
+  </div>
+  
+  <div class="error-msg" id="errorMsg"></div>
+  <div class="success-msg" id="successMsg"></div>
+  
+  <div class="toggle-form">
+    <span id="toggleText">沒有帳號？<a id="toggleLink">點我註冊</a></span>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/login.js"></script>
+
+</body>
+</html>

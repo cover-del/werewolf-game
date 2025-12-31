@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>狼人殺遊戲</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+
+<div class="container">
+  <!-- 頁頭 -->
+  <div class="header">
+    <h1>🐺 線上狼人殺</h1>
+    <div>
+      <span class="player-info">玩家: <strong id="playerName"></strong></span>
+      <button class="btn-danger" onclick="logout()">登出</button>
+    </div>
+  </div>
+
+  <!-- 大廳區域 -->
+  <div class="lobby-area" id="lobbyArea">
+    <div class="content">
+      <!-- 建立房間 -->
+      <div class="card">
+        <h2>建立房間</h2>
+        <div class="form-group">
+          <label>房號（可選）</label>
+          <input type="text" id="customRoomId" placeholder="留空自動生成">
+        </div>
+        <button class="btn-primary" onclick="createRoom()" style="width: 100%;">建立房間</button>
+        <div class="error-msg" id="createError"></div>
+      </div>
+
+      <!-- 加入房間 -->
+      <div class="card">
+        <h2>加入房間</h2>
+        <div class="form-group">
+          <label>房號</label>
+          <input type="text" id="joinRoomId" placeholder="輸入房號">
+        </div>
+        <button class="btn-success" onclick="joinRoom()" style="width: 100%;">加入房間</button>
+        <div class="error-msg" id="joinError"></div>
+      </div>
+    </div>
+
+    <!-- 房間列表 -->
+    <div class="card">
+      <h2>房間列表</h2>
+      <button class="btn-secondary" onclick="refreshRoomList()" style="width: 100%; margin-bottom: 15px;">刷新列表</button>
+      <div class="room-list" id="roomList">
+        <div style="text-align: center; color: #999; padding: 20px;">載入中...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 遊戲區域 -->
+  <div class="game-area" id="gameArea">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h2 style="margin: 0;">房間 <span id="roomId"></span> | 你的角色: <span id="myRole" style="color: #e74c3c;">?</span></h2>
+        <button class="btn-danger" onclick="leaveRoom()">離開房間</button>
+      </div>
+      
+      <hr class="divider">
+
+      <!-- 玩家列表 -->
+      <h3 style="color: #333; margin-bottom: 10px;">玩家列表</h3>
+      <div class="player-list" id="playerList"></div>
+
+      <hr class="divider">
+
+      <!-- 夜晚行動 -->
+      <div id="nightActionDiv" style="display: none;">
+        <h3 style="color: #333; margin-bottom: 10px;">夜晚行動</h3>
+        <div id="nightActionInfo" style="margin-bottom: 10px; color: #667eea; font-weight: 600;"></div>
+        <div id="nightTargets" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-bottom: 15px;"></div>
+        <hr class="divider">
+      </div>
+
+      <!-- 投票 -->
+      <div id="voteDiv" style="display: none;">
+        <h3 style="color: #333; margin-bottom: 10px;">白天投票</h3>
+        <div id="voteTargets" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-bottom: 10px;"></div>
+        <button class="btn-primary" onclick="submitMyVote()" style="width: 100%; margin-bottom: 15px;">提交投票</button>
+        <hr class="divider">
+      </div>
+
+      <!-- 房主控制 -->
+      <div id="hostControlDiv" style="display: none;">
+        <h3 style="color: #333; margin-bottom: 10px;">房主控制</h3>
+        <div class="action-buttons">
+          <button class="action-btn" onclick="assignRoles()">分配身分</button>
+          <button class="action-btn" id="resolveNightBtn" onclick="resolveNight()" style="display: none;">結束夜晚</button>
+          <button class="action-btn" id="resolveVoteBtn" onclick="resolveVotes()" style="display: none;">結束投票</button>
+        </div>
+        <hr class="divider">
+      </div>
+
+      <!-- 聊天室 -->
+      <h3 style="color: #333; margin-bottom: 10px;">聊天室</h3>
+      <div class="chat-box" id="chatBox"></div>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="chatInput" placeholder="輸入訊息..." style="flex: 1;">
+        <button class="btn-primary" onclick="sendChat()" style="width: 100px;">送出</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/game.js"></script>
+
+</body>
+</html>
