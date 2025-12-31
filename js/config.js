@@ -1,16 +1,17 @@
 /**
- * 狼人殺遊戲 - 全域配置
+ * 狼人殺遊戲 - 配置檔案
+ * 指向 Vercel Proxy
  */
-
 const CONFIG = {
-  // 指向 Vercel Proxy
-  GS_WEB_APP_URL: '/api/proxy',
+  // ===== Vercel Proxy URL =====
+  // 改成你的正確 Vercel 專案
+  GS_WEB_APP_URL: 'https://werewolf-game-ga88.vercel.app/api/proxy',
 
-  // 遊戲設定
-  POLL_INTERVAL_MS: 1500,  // 輪詢間隔
-  DEFAULT_PLAYERS: 6,       // 預設玩家數量
+  // ===== 遊戲設定 =====
+  POLL_INTERVAL_MS: 1500,        // 輪詢間隔（毫秒）
+  DEFAULT_PLAYERS: 6,             // 預設玩家人數
 
-  // 角色分配
+  // ===== 角色分配 =====
   ROLE_DISTRIBUTION: {
     6: ['werewolf', 'werewolf', 'seer', 'doctor', 'villager', 'villager'],
     7: ['werewolf', 'werewolf', 'werewolf', 'seer', 'doctor', 'villager', 'villager'],
@@ -19,18 +20,18 @@ const CONFIG = {
     10: ['werewolf', 'werewolf', 'werewolf', 'werewolf', 'seer', 'doctor', 'villager', 'villager', 'villager', 'villager']
   },
 
-  // 管理員密碼
+  // ===== 管理員設定 =====
   ADMIN_PASSWORD: '1234',
 
-  // 角色名稱對應
+  // ===== 角色名稱對應 =====
   ROLE_NAMES: {
-    werewolf: '🐺 狼人',
-    seer: '🔮 預言家',
-    doctor: '⚕️ 醫生',
-    villager: '👨 村民'
+    'werewolf': '🐺 狼人',
+    'seer': '🔮 預言家',
+    'doctor': '⚕️ 醫生',
+    'villager': '👨 村民'
   },
 
-  // 本地儲存鍵名
+  // ===== 儲存鍵名 =====
   STORAGE_KEYS: {
     playId: 'werewolf_playId',
     playerName: 'werewolf_playerName',
