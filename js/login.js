@@ -50,51 +50,47 @@ async function handleSubmit() {
   const errorDiv = document.getElementById('errorMsg');
   const successDiv = document.getElementById('successMsg');
   const submitBtn = document.getElementById('submitBtn');
-  
+
   clearMessages();
-  
+
   if (!name || !password) {
     errorDiv.textContent = '請填寫暱稱與密碼';
     errorDiv.classList.add('show');
     return;
   }
-  
-  // 禁用按鈕，顯示加載狀態
+
   submitBtn.disabled = true;
   submitBtn.classList.add('loading');
   errorDiv.textContent = '處理中...';
   errorDiv.classList.add('show');
-  
+
   try {
-    let res;
-    
-    if (isLogin) {
-      res = await gameAPI.loginPlayer(name, password);
-    } else {
-      res = await gameAPI.registerPlayer(name, password);
-    }
-    
-    if (res.error) {
-      errorDiv.textContent = res.error;
+    const res = isLogin
+      ? await gameAPI.loginPlayer(name, password)
+      : await gameAPI.registerPlayer(name, password);
+
+    // ❌ 核心判斷
+    if (res.error || !res.playId) {
+      errorDiv.textContent = res.error || '登入失敗，請稍後再試';
       errorDiv.classList.add('show');
       submitBtn.disabled = false;
       submitBtn.classList.remove('loading');
       return;
     }
-    
-    // 登入/註冊成功
+
+    // 成功
     errorDiv.classList.remove('show');
     successDiv.textContent = isLogin ? '登入成功！進入遊戲中...' : '註冊成功！進入遊戲中...';
     successDiv.classList.add('show');
-    
-    // 儲存玩家資訊
+
+    // 儲存
     localStorage.setItem(CONFIG.STORAGE_KEYS.playId, res.playId);
     localStorage.setItem(CONFIG.STORAGE_KEYS.playerName, res.name || '');
-    
-    // 延遲後跳轉到遊戲頁面
+
     setTimeout(() => {
       window.location.href = 'index.html';
     }, 1000);
+
   } catch (error) {
     console.error('錯誤:', error);
     errorDiv.textContent = '發生錯誤：' + error.message;
