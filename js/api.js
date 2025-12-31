@@ -125,13 +125,8 @@ class GameAPI {
 let gameAPI = null;
 
 function initializeAPI() {
-  if (!CONFIG || !CONFIG.GS_WEB_APP_URL) {
-    console.error('❌ CONFIG 尚未設定，無法初始化 API');
-    return null;
-  }
-
-  gameAPI = new GameAPI(CONFIG.GS_WEB_APP_URL);
-  console.log('✅ GameAPI 已初始化');
+  gameAPI = new GameAPI('/api/proxy');
+  console.log('✅ GameAPI 已初始化（使用 Vercel Proxy）');
   return gameAPI;
 }
 
