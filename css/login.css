@@ -1,0 +1,84 @@
+/* 登入頁面特定樣式 */
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 400px;
+  padding: 40px;
+}
+
+h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+  font-size: 28px;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 30px;
+}
+
+.button-group button {
+  flex: 1;
+}
+
+.btn-login {
+  background: #667eea;
+  color: white;
+}
+
+.btn-login:hover:not(:disabled) {
+  background: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-register {
+  background: #f0f0f0;
+  color: #333;
+  border: 2px solid #ddd;
+}
+
+.btn-register:hover:not(:disabled) {
+  background: #e8e8e8;
+  border-color: #667eea;
+}
+
+.toggle-form {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  color: #666;
+}
+
+.toggle-form a {
+  color: #667eea;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.toggle-form a:hover {
+  color: #5568d3;
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 20px;
+  }
+  
+  h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+}
