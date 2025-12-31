@@ -1,13 +1,13 @@
 // api/proxy.js
 export default async function handler(req, res) {
   // ===== 全域 CORS =====
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', '*'); // 或限定來源: 'https://cover-del.github.io'
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   // ===== 預檢請求 =====
   if (req.method === 'OPTIONS') {
-    return res.status(204).end(); // OPTIONS 不需要 body
+    return res.status(204).end();
   }
 
   // 僅允許 POST
@@ -16,10 +16,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const GAS_URL =
-      'https://script.google.com/macros/s/1RAmHB34wjl9QpmiC5CPsjybiuG-cujkcGYF5kfORtUW7Ic4dTi9n7_dd/exec';
+    const GAS_URL = 'https://script.google.com/macros/s/1RAmHB34wjl9QpmiC5CPsjybiuG-cujkcGYF5kfORtUW7Ic4dTi9n7_dd/exec';
 
-    // 將前端的 JSON body 轉發到 GAS
     const response = await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -28,12 +26,11 @@ export default async function handler(req, res) {
 
     const text = await response.text();
 
-    // 嘗試解析成 JSON
+    // 嘗試解析 JSON
     try {
       const json = JSON.parse(text);
       return res.status(200).json(json);
     } catch {
-      // 如果不是 JSON，直接回傳原始字串
       return res.status(200).json({ raw: text });
     }
   } catch (err) {
