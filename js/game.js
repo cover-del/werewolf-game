@@ -95,12 +95,19 @@ async function refreshRoomList() {
     const res = await gameAPI.listRooms();
     const roomList = document.getElementById('roomList');
     roomList.innerHTML = '';
-    
-    if (!res || res.length === 0) {
+
+    // 防呆：確保回傳是陣列
+    if (!Array.isArray(res)) {
+      console.error('刷新房間列表失敗：回傳不是陣列', res);
+      roomList.innerHTML = `<div style="text-align:center; color:#f00; padding:20px;">無法取得房間列表</div>`;
+      return;
+    }
+
+    if (res.length === 0) {
       roomList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">目前沒有房間</div>';
       return;
     }
-    
+
     res.forEach(room => {
       const div = document.createElement('div');
       div.className = 'room-item';
@@ -115,6 +122,8 @@ async function refreshRoomList() {
     });
   } catch (error) {
     console.error('刷新房間列表失敗:', error);
+    const roomList = document.getElementById('roomList');
+    roomList.innerHTML = `<div style="text-align:center; color:#f00; padding:20px;">刷新房間列表失敗</div>`;
   }
 }
 
