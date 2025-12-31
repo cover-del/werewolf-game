@@ -26,8 +26,7 @@ class GameAPI {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(data),
-        mode: 'no-cors' // 允許跨域請求
+        body: JSON.stringify(data)
       });
 
       // 注意：使用 no-cors 模式時，response.json() 可能不可用
