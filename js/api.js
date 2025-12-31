@@ -85,22 +85,8 @@ class GameAPI {
 let gameAPI = null;
 
 function initializeAPI() {
-  // 這裡填入你 Vercel 部署的 proxy URL
-  // 範例: https://werewolf-game-uvln.vercel.app/api/proxy
-  const VERCEL_PROXY_URL = 'https://werewolf-game-uvln.vercel.app/api/proxy';
-
-  if (!VERCEL_PROXY_URL) {
-    console.error('❌ Vercel Proxy URL 尚未設定，無法初始化 API');
-    return null;
-  }
-
+  const VERCEL_PROXY_URL = 'https://werewolf-game-ga88.vercel.app/api/proxy';
   gameAPI = new GameAPI(VERCEL_PROXY_URL);
-  console.log('✅ GameAPI 已初始化（使用 Vercel Proxy）');
+  console.log('✅ GameAPI 已初始化（使用正確的 Vercel Proxy）');
   return gameAPI;
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeAPI);
-} else {
-  initializeAPI();
 }
