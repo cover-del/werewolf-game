@@ -9,7 +9,7 @@ const CONFIG = {
   // ===== Google Apps Script Web App 設定 =====
   // 請將此 URL 替換為您的 Google Apps Script Web App URL
   // 格式: https://script.google.com/macros/d/{SCRIPT_ID}/usercopy/v{VERSION}/exec
-  GS_WEB_APP_URL: 'https://script.google.com/macros/d/YOUR_SCRIPT_ID/usercopy/v1/exec',
+  GS_WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbwr9-1yjPHMxaY9lC9YtJ9G7dNAtQvKl44t8HCZmGeo7BQSUm2y5Qz9a4XjlTM37hK0/exec',
   
   // ===== 遊戲設定 =====
   POLL_INTERVAL_MS: 1500,        // 輪詢間隔（毫秒）
