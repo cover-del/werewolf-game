@@ -1,14 +1,13 @@
 export default async function handler(req, res) {
-
-  // 👇 一定要在最上面就加 CORS 回應
+  // 處理 CORS 預檢
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    return res.status(204).end(); // 預檢回傳 204
+    return res.status(204).end();
   }
 
-  // 其他請求也要加 CORS 標頭
+  // 對所有 POST 或其他方法也要加 CORS 標頭
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -18,8 +17,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const GAS_URL = 'https://script.google.com/macros/s/1RAmHB34wjl9QpmiC5CPsjybiuG-cujkcGYF5kfORtUW7Ic4dTi9n7_dd/exec';
-
+    const GAS_URL = 'https://script.google.com/macros/s/.../exec';
     const response = await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -37,3 +35,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Proxy error', detail: err.message });
   }
 }
+
