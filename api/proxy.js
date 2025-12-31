@@ -37,6 +37,7 @@ export default async function handler(req, res) {
         success: false,
         error: 'GAS 回傳非 JSON',
         raw: text
+        console.log('GAS RAW RESPONSE:', text);
       });
     }
 
