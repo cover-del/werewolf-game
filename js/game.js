@@ -24,11 +24,44 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // ⭐ 已在房間 → 直接回房（不要顯示大廳）
+  // ================= 玩家資訊彈窗 =================
+  const playerInfoBtn = document.getElementById('playerInfoBtn');
+  if (playerInfoBtn) {
+    playerInfoBtn.addEventListener('click', async () => {
+      const modal = document.getElementById('playerInfoModal');
+      const content = document.getElementById('playerInfoContent');
+
+      try {
+        const res = await gameAPI.getPlayerStats(playId);
+        const data = res.data || res;
+
+        content.innerHTML = `
+          <p><strong>Play ID:</strong> ${data.playId}</p>
+          <p><strong>名字:</strong> ${data.name}</p>
+          <p><strong>勝場:</strong> ${data.wins}</p>
+          <p><strong>敗場:</strong> ${data.losses}</p>
+          <p><strong>勝率:</strong> ${data.winRate}%</p>
+        `;
+      } catch (e) {
+        content.textContent = '載入玩家資訊失敗';
+        console.error(e);
+      }
+
+      modal.style.display = 'flex';
+    });
+  }
+
+  // ================= 大廳更換頭像 =================
+  const lobbyAvatarBtn = document.getElementById('lobbyChangeAvatarBtn');
+  if (lobbyAvatarBtn) {
+    lobbyAvatarBtn.addEventListener('click', () => {
+      changeMyAvatar(playerId);
+    });
+  }
+
+  // ⭐ 已在房間 → 自動回房
   if (roomId && playerId) {
     console.log('🔁 偵測到玩家已在房間，嘗試自動回房', roomId);
-
-    // 你現有的進房邏輯（名稱可能不同）
     rejoinRoom(roomId, playerId);
     return;
   }
@@ -36,11 +69,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // ✅ 正常顯示大廳
   document.getElementById('playerName').textContent = playerName || '玩家';
   refreshRoomList();
-
-  // 定時刷新房間列表
   setInterval(refreshRoomList, 5000);
 });
 
+// ================= 全域函式 =================
+
+// 關閉玩家資訊彈窗（HTML onclick 會用到）
+function closePlayerInfo() {
+  document.getElementById('playerInfoModal').style.display = 'none';
+}
+
+// 分頁 / 關閉時通知後端
 window.addEventListener('beforeunload', () => {
   const roomId = localStorage.getItem(CONFIG.STORAGE_KEYS.roomId);
   const playerId = localStorage.getItem(CONFIG.STORAGE_KEYS.playerId);
@@ -57,26 +96,29 @@ window.addEventListener('beforeunload', () => {
   }
 });
 
-document.getElementById('manualLeaveBtn').addEventListener('click', () => {
+// 手動清除房間狀態
+document.getElementById('manualLeaveBtn')?.addEventListener('click', async () => {
   if (!confirm('確定要退出房間狀態嗎？')) return;
 
-  // 清除本地房間資訊
+  const roomId = localStorage.getItem(CONFIG.STORAGE_KEYS.roomId);
+  const playerId = localStorage.getItem(CONFIG.STORAGE_KEYS.playerId);
+
+  if (roomId && playerId) {
+    try {
+      await gameAPI.leaveRoom(roomId, playerId);
+    } catch {
+      console.warn('手動退出通知後端失敗（可忽略）');
+    }
+  }
+
   localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
   localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
 
-  // 重置 state
-  state.roomId = null;
-  state.playerId = null;
-  state.myVote = null;
-  state.phase = null;
-
-  // 停止輪詢
+  state = { roomId: null, playerId: null, myVote: null, phase: null };
   if (pollTimer) clearInterval(pollTimer);
 
-  // 刷新房間列表
   refreshRoomList();
-
-  alert('已退出房間狀態，可以重新加入房間');
+  alert('已退出房間狀態');
 });
 
 
