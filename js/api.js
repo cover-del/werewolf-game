@@ -78,6 +78,10 @@ class GameAPI {
   postChat(roomId, playerId, text) {
     return this.request('postChat', { roomId, playerId, text });
   }
+  
+  listRooms() {
+    return this.request('listRooms');
+  }
 }
 
 // 全域實例
