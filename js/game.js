@@ -46,11 +46,13 @@ async function createRoom() {
       customRoomId || undefined
     );
     
-    if (res.error) {
-      errorDiv.textContent = res.error;
+  const result = res.data || res;
+  
+    if (result.error) {
+      errorDiv.textContent = result.error;
       errorDiv.classList.add('show');
     } else {
-      enterGame(res.roomId, res.playerId);
+      enterGame(result.roomId, result.playerId);
     }
   } catch (error) {
     console.error('建立房間失敗:', error);
@@ -77,11 +79,13 @@ async function joinRoom() {
       ''
     );
     
-    if (res.error) {
-      errorDiv.textContent = res.error;
+    const result = res.data || res;
+
+    if (result.error) {
+      errorDiv.textContent = result.error;
       errorDiv.classList.add('show');
     } else {
-      enterGame(roomId, res.playerId);
+      enterGame(roomId, result.playerId);
     }
   } catch (error) {
     console.error('加入房間失敗:', error);
@@ -93,22 +97,23 @@ async function joinRoom() {
 async function refreshRoomList() {
   try {
     const res = await gameAPI.listRooms();
+    const result = res.data || res;
     const roomList = document.getElementById('roomList');
     roomList.innerHTML = '';
 
     // 防呆：確保回傳是陣列
-    if (!Array.isArray(res)) {
-      console.error('刷新房間列表失敗：回傳不是陣列', res);
+    if (!Array.isArray(result)) {
+      console.error('刷新房間列表失敗：回傳不是陣列', result);
       roomList.innerHTML = `<div style="text-align:center; color:#f00; padding:20px;">無法取得房間列表</div>`;
       return;
     }
 
-    if (res.length === 0) {
+    if (result.length === 0) {
       roomList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">目前沒有房間</div>';
       return;
     }
 
-    res.forEach(room => {
+    result.forEach(room => {
       const div = document.createElement('div');
       div.className = 'room-item';
       div.innerHTML = `
@@ -145,17 +150,18 @@ async function pollRoom() {
   
   try {
     const res = await gameAPI.getRoomState(state.roomId, state.playerId);
+    const result = res.data || res;
     
-    if (res.error) return;
+    if (result.error) return;
     
-    state.phase = res.phase;
-    myRole = res.players[state.playerId]?.role || null;
+    state.phase = result.phase;
+    myRole = result.players[state.playerId]?.role || null;
     document.getElementById('myRole').textContent = myRole ? CONFIG.ROLE_NAMES[myRole] || myRole : '?';
     
     // 更新玩家列表
     const playerList = document.getElementById('playerList');
     playerList.innerHTML = '';
-    Object.values(res.players || {}).forEach(p => {
+    Object.values(result.players || {}).forEach(p => {
       const div = document.createElement('div');
       div.className = 'player-card';
       div.innerHTML = `
@@ -171,7 +177,7 @@ async function pollRoom() {
     // 更新聊天室
     const chatBox = document.getElementById('chatBox');
     chatBox.innerHTML = '';
-    (res.chat || []).forEach(msg => {
+    (result.chat || []).forEach(msg => {
       const div = document.createElement('div');
       div.className = 'chat-message';
       if (msg.system) {
@@ -185,11 +191,11 @@ async function pollRoom() {
     chatBox.scrollTop = chatBox.scrollHeight;
     
     // 檢查是否是房主
-    const isHost = res.hostId === state.playerId;
+    const isHost = result.hostId === state.playerId;
     document.getElementById('hostControlDiv').style.display = isHost ? 'block' : 'none';
     
     // 夜晚行動
-    if ((res.phase === 'rolesAssigned' || res.phase === 'night') && res.players[state.playerId]?.alive) {
+    if ((result.phase === 'rolesAssigned' || result.phase === 'night') && result.players[state.playerId]?.alive) {
       document.getElementById('nightActionDiv').style.display = 'block';
       const nightInfo = document.getElementById('nightActionInfo');
       const nightTargets = document.getElementById('nightTargets');
@@ -197,7 +203,7 @@ async function pollRoom() {
       
       if (myRole === 'werewolf') {
         nightInfo.textContent = '🐺 狼人：選擇攻擊目標';
-        Object.values(res.players).filter(p => p.alive && p.id !== state.playerId).forEach(p => {
+        Object.values(result.players).filter(p => p.alive && p.id !== state.playerId).forEach(p => {
           const btn = document.createElement('button');
           btn.className = 'action-btn';
           btn.textContent = `攻擊 ${p.name}`;
@@ -206,7 +212,7 @@ async function pollRoom() {
         });
       } else if (myRole === 'seer') {
         nightInfo.textContent = '🔮 預言家：選擇查驗目標';
-        Object.values(res.players).filter(p => p.alive && p.id !== state.playerId).forEach(p => {
+        Object.values(result.players).filter(p => p.alive && p.id !== state.playerId).forEach(p => {
           const btn = document.createElement('button');
           btn.className = 'action-btn';
           btn.textContent = `查驗 ${p.name}`;
@@ -215,7 +221,7 @@ async function pollRoom() {
         });
       } else if (myRole === 'doctor') {
         nightInfo.textContent = '⚕️ 醫生：選擇守護目標';
-        Object.values(res.players).filter(p => p.alive).forEach(p => {
+        Object.values(result.players).filter(p => p.alive).forEach(p => {
           const btn = document.createElement('button');
           btn.className = 'action-btn';
           btn.textContent = `守護 ${p.name}`;
@@ -230,11 +236,11 @@ async function pollRoom() {
     }
     
     // 投票
-    if (res.phase === 'day' && res.players[state.playerId]?.alive) {
+    if (result.phase === 'day' && result.players[state.playerId]?.alive) {
       document.getElementById('voteDiv').style.display = 'block';
       const voteTargets = document.getElementById('voteTargets');
       voteTargets.innerHTML = '';
-      Object.values(res.players).filter(p => p.alive && p.id !== state.playerId).forEach(p => {
+      Object.values(result.players).filter(p => p.alive && p.id !== state.playerId).forEach(p => {
         const btn = document.createElement('button');
         btn.className = 'action-btn';
         btn.textContent = `投票 ${p.name}`;
