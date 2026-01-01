@@ -242,11 +242,22 @@ async function pollRoom() {
     Object.values(result.players || {}).forEach(p => {
       const div = document.createElement('div');
       div.className = 'player-card';
+      // 將角色圖示路徑對應
+      const roleImages = {
+        werewolf: 'img/roles/werewolf.png',
+        seer: 'img/roles/seer.png',
+        doctor: 'img/roles/doctor.png',
+        villager: 'img/roles/villager.png'
+      };
+      
       div.innerHTML = `
         <img src="${p.avatar || 'https://via.placeholder.com/50'}" class="player-avatar" onerror="this.src='https://via.placeholder.com/50'">
-        <div class="player-name">${p.name}</div>
+        <div class="player-info-wrapper" style="display: flex; align-items: center; gap: 8px;">
+          <div class="player-name">${p.name}</div>
+          ${p.role ? `<img src="${roleImages[p.role]}" class="role-icon" style="width:24px; height:24px;">` : ''}
+        </div>
         <div class="player-status ${p.alive ? 'alive' : 'dead'}">
-          ${p.alive ? '🟢 存活' : '⚫ 死亡'} ${p.role ? `(${CONFIG.ROLE_NAMES[p.role] || p.role})` : ''}
+          ${p.alive ? '🟢 存活' : '⚫ 死亡'}
         </div>
       `;
       playerList.appendChild(div);
