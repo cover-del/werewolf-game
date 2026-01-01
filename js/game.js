@@ -97,23 +97,23 @@ async function joinRoom() {
 async function refreshRoomList() {
   try {
     const res = await gameAPI.listRooms();
-    const result = res.data || res;
+
+    if (!res.success) {
+      throw new Error(res.error || '未知錯誤');
+    }
+
+    const rooms = res.data;
+    if (!Array.isArray(rooms)) throw new Error('回傳不是陣列');
+
     const roomList = document.getElementById('roomList');
     roomList.innerHTML = '';
 
-    // 防呆：確保回傳是陣列
-    if (!Array.isArray(result)) {
-      console.error('刷新房間列表失敗：回傳不是陣列', result);
-      roomList.innerHTML = `<div style="text-align:center; color:#f00; padding:20px;">無法取得房間列表</div>`;
-      return;
-    }
-
-    if (result.length === 0) {
+    if (rooms.length === 0) {
       roomList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">目前沒有房間</div>';
       return;
     }
 
-    result.forEach(room => {
+    rooms.forEach(room => {
       const div = document.createElement('div');
       div.className = 'room-item';
       div.innerHTML = `
@@ -125,12 +125,14 @@ async function refreshRoomList() {
       `;
       roomList.appendChild(div);
     });
+
   } catch (error) {
     console.error('刷新房間列表失敗:', error);
-    const roomList = document.getElementById('roomList');
-    roomList.innerHTML = `<div style="text-align:center; color:#f00; padding:20px;">刷新房間列表失敗</div>`;
+    document.getElementById('roomList').innerHTML =
+      `<div style="text-align:center; color:#f00; padding:20px;">刷新房間列表失敗</div>`;
   }
 }
+
 
 function enterGame(roomId, playerId) {
   state.roomId = roomId;
