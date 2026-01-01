@@ -28,11 +28,46 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(refreshRoomList, 5000);
 });
 
-function logout() {
+window.addEventListener('beforeunload', () => {
+  const roomId = localStorage.getItem(CONFIG.STORAGE_KEYS.roomId);
+  const playerId = localStorage.getItem(CONFIG.STORAGE_KEYS.playerId);
+
+  if (roomId && playerId && gameAPI) {
+    navigator.sendBeacon(
+      gameAPI.baseUrl,
+      JSON.stringify({
+        action: 'leaveRoom',
+        roomId,
+        playerId
+      })
+    );
+  }
+});
+
+
+async function logout() {
+  const roomId = localStorage.getItem(CONFIG.STORAGE_KEYS.roomId);
+  const playerId = localStorage.getItem(CONFIG.STORAGE_KEYS.playerId);
+
+  // 如果玩家在房間中，先通知後端離開
+  if (roomId && playerId && gameAPI) {
+    try {
+      await gameAPI.leaveRoom(roomId, playerId);
+    } catch (e) {
+      console.warn('登出時離開房間失敗（可忽略）', e);
+    }
+  }
+
+  // 清除本地資料
   localStorage.removeItem(CONFIG.STORAGE_KEYS.playId);
   localStorage.removeItem(CONFIG.STORAGE_KEYS.playerName);
+  localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
+  localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
+
+  // 回登入頁
   window.location.href = 'login.html';
 }
+
 
 async function createRoom() {
   const customRoomId = document.getElementById('customRoomId').value.trim();
