@@ -57,6 +57,28 @@ window.addEventListener('beforeunload', () => {
   }
 });
 
+document.getElementById('manualLeaveBtn').addEventListener('click', () => {
+  if (!confirm('確定要退出房間狀態嗎？')) return;
+
+  // 清除本地房間資訊
+  localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
+  localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
+
+  // 重置 state
+  state.roomId = null;
+  state.playerId = null;
+  state.myVote = null;
+  state.phase = null;
+
+  // 停止輪詢
+  if (pollTimer) clearInterval(pollTimer);
+
+  // 刷新房間列表
+  refreshRoomList();
+
+  alert('已退出房間狀態，可以重新加入房間');
+});
+
 
 async function logout() {
   const roomId = localStorage.getItem(CONFIG.STORAGE_KEYS.roomId);
