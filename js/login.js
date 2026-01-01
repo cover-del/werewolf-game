@@ -97,9 +97,21 @@ async function handleSubmit() {
       : '註冊成功！進入遊戲中...';
     successDiv.classList.add('show');
     
-    // 🔧 儲存統一來源
+    // 🔧 儲存登入資訊
     localStorage.setItem(CONFIG.STORAGE_KEYS.playId, result.playId);
     localStorage.setItem(CONFIG.STORAGE_KEYS.playerName, result.name || '');
+    
+    // ⭐ 如果帳號已在房間，直接回到該房間
+    if (result.inRoom && result.roomId && result.playerId) {
+      localStorage.setItem(CONFIG.STORAGE_KEYS.roomId, result.roomId);
+      localStorage.setItem(CONFIG.STORAGE_KEYS.playerId, result.playerId);
+    
+      successDiv.textContent = `已回到房間 ${result.roomId}，進入遊戲中...`;
+    } else {
+      // 沒在房間 → 清空殘留房間資料
+      localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
+      localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
+    }
     
     setTimeout(() => {
       window.location.href = 'index.html';
