@@ -211,3 +211,91 @@
   background: #bdc3c7;
   cursor: not-allowed;
 }
+
+/* ===== 玩家資訊按鈕 ===== */
+.btn-info {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: background 0.3s;
+}
+
+.btn-info:hover {
+  background: #2e86c1;
+}
+
+/* ===== 玩家資訊 Modal ===== */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 20px 24px;
+  width: 320px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  animation: modalFadeIn 0.2s ease-out;
+  position: relative;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+  text-align: center;
+}
+
+.modal-content p {
+  margin: 6px 0;
+  font-size: 14px;
+  color: #555;
+}
+
+/* 關閉按鈕 */
+.close-btn {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  font-size: 20px;
+  cursor: pointer;
+  color: #999;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+/* ===== 大廳更換頭像按鈕 ===== */
+#lobbyChangeAvatarBtn {
+  margin-top: 15px;
+}
+
+/* ===== 玩家卡片內的更換頭像按鈕 ===== */
+.player-card button.btn-secondary {
+  margin-top: 8px;
+  font-size: 12px;
+  padding: 6px;
+}
