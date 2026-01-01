@@ -82,6 +82,14 @@ class GameAPI {
   listRooms() {
     return this.request('listRooms');
   }
+
+  getPlayerStats(playId) {
+    return this.request('getPlayerStats', { playId });
+  }
+  
+  uploadAvatar(dataUrl, filename) {
+    return this.request('uploadAvatar', { dataUrl, filename });
+  }
 }
 
 // 全域實例
