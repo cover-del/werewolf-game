@@ -1,9 +1,9 @@
 /**
- * 狼人殺遊戲 - API 通訊層（直連 GAS）
+ * 狼人殺遊戲 - API 通訊層（透過 Proxy）
  */
 class GameAPI {
-  constructor(gasUrl) {
-    this.baseUrl = gasUrl;
+  constructor(proxyPath = '/api/proxy') {
+    this.baseUrl = proxyPath;
     this.timeout = 10000;
   }
 
@@ -21,15 +21,7 @@ class GameAPI {
 
       clearTimeout(timeoutId);
 
-      const text = await response.text();
-
-      let json;
-      try {
-        json = JSON.parse(text);
-      } catch {
-        throw new Error('GAS 回傳非 JSON：' + text.slice(0, 200));
-      }
-
+      const json = await response.json();
       return json;
 
     } catch (err) {
@@ -46,17 +38,54 @@ class GameAPI {
   registerPlayer(name, password) {
     return this.request('registerPlayer', { name, password });
   }
+
+  createRoom(playId, avatarUrl, customRoomId) {
+    return this.request('createRoom', { playId, avatarUrl, customRoomId });
+  }
+
+  joinRoom(roomId, playId, avatarUrl) {
+    return this.request('joinRoom', { roomId, playId, avatarUrl });
+  }
+
+  leaveRoom(roomId, playerId) {
+    return this.request('leaveRoom', { roomId, playerId });
+  }
+
+  getRoomState(roomId, requesterId) {
+    return this.request('getRoomState', { roomId, requesterId });
+  }
+
+  assignRoles(roomId, callerId) {
+    return this.request('assignRoles', { roomId, callerId });
+  }
+
+  submitNightAction(roomId, playerId, action) {
+    return this.request('submitNightAction', { roomId, playerId, action });
+  }
+
+  resolveNight(roomId, callerId) {
+    return this.request('resolveNight', { roomId, callerId });
+  }
+
+  submitVote(roomId, voterId, targetId) {
+    return this.request('submitVote', { roomId, voterId, targetId });
+  }
+
+  resolveVotes(roomId, callerId) {
+    return this.request('resolveVotes', { roomId, callerId });
+  }
+
+  postChat(roomId, playerId, text) {
+    return this.request('postChat', { roomId, playerId, text });
+  }
 }
 
 // 全域實例
 let gameAPI = null;
 
 function initializeAPI() {
-  const GAS_URL =
-    'https://script.google.com/macros/s/AKfycbw6GXX9DRqfUwdTy5cHph9KOnbDYkSrYXVeYsoqIQgrzx9Jsuw4P3bK4-KQqhwebY-x/exec';
-
-  gameAPI = new GameAPI(GAS_URL);
-  console.log('✅ GameAPI 已初始化（直連 GAS）');
+  gameAPI = new GameAPI(); // 透過 /api/proxy
+  console.log('✅ GameAPI 已初始化（透過 Proxy）');
 }
 
 document.addEventListener('DOMContentLoaded', initializeAPI);
