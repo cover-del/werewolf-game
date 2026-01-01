@@ -68,36 +68,39 @@ async function handleSubmit() {
     const res = isLogin
       ? await gameAPI.loginPlayer(name, password)
       : await gameAPI.registerPlayer(name, password);
-
-    // ✅ 先檢查 proxy 是否成功
-    if (!res.success) {
-      errorDiv.textContent = res.error || '登入失敗，請稍後再試';
+    
+    // 🔧【關鍵】統一資料來源（同時支援 proxy / 直連）
+    const result = res.data || res;
+    
+    // 🔧 先判斷錯誤
+    if (result.error) {
+      errorDiv.textContent = result.error;
       errorDiv.classList.add('show');
       submitBtn.disabled = false;
       submitBtn.classList.remove('loading');
       return;
     }
-
-    const data = res.data;
-
-    // 再檢查 playId 是否存在
-    if (!data.playId) {
+    
+    // 🔧 再判斷 playId
+    if (!result.playId) {
       errorDiv.textContent = '登入失敗，playId 不存在';
       errorDiv.classList.add('show');
       submitBtn.disabled = false;
       submitBtn.classList.remove('loading');
       return;
     }
-
-    // 成功
+    
+    // ✅ 成功
     errorDiv.classList.remove('show');
-    successDiv.textContent = isLogin ? '登入成功！進入遊戲中...' : '註冊成功！進入遊戲中...';
+    successDiv.textContent = isLogin
+      ? '登入成功！進入遊戲中...'
+      : '註冊成功！進入遊戲中...';
     successDiv.classList.add('show');
-
-    // 儲存
-    localStorage.setItem(CONFIG.STORAGE_KEYS.playId, data.playId);
-    localStorage.setItem(CONFIG.STORAGE_KEYS.playerName, data.name || '');
-
+    
+    // 🔧 儲存統一來源
+    localStorage.setItem(CONFIG.STORAGE_KEYS.playId, result.playId);
+    localStorage.setItem(CONFIG.STORAGE_KEYS.playerName, result.name || '');
+    
     setTimeout(() => {
       window.location.href = 'index.html';
     }, 1000);
