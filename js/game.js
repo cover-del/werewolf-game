@@ -296,7 +296,7 @@ async function pollRoom() {
         <img src="${p.avatar || 'https://via.placeholder.com/50'}" class="player-avatar" onerror="this.src='https://via.placeholder.com/50'">
         <div class="player-info-wrapper" style="display: flex; align-items: center; gap: 8px;">
           <div class="player-name">${p.name}</div>
-          ${p.role ? `<img src="${roleImages[p.role]}" class="role-icon" style="width:24px; height:24px;">` : ''}
+          ${p.id === state.playerId && p.role? `<img src="${roleImages[p.role]}" class="role-icon" style="width:24px; height:24px;">` : ''}
         </div>
         <div class="player-status ${p.alive ? 'alive' : 'dead'}">
           ${p.alive ? '🟢 存活' : '⚫ 死亡'}
@@ -495,4 +495,34 @@ async function rejoinRoom(roomId, playerId) {
   } catch (e) {
     console.error('回房錯誤', e);
   }
+}
+
+function changeMyAvatar() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const res = await gameAPI.request('uploadAvatar', {
+        dataUrl: reader.result,
+        filename: file.name
+      });
+
+      if (!res.success) {
+        alert('上傳失敗');
+        return;
+      }
+
+      localStorage.setItem(CONFIG.STORAGE_KEYS.avatarUrl, res.data);
+      alert('頭像已更新');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  input.click();
 }
