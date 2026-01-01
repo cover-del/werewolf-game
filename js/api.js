@@ -81,11 +81,17 @@ class GameAPI {
 }
 
 // 全域實例
+// 初始化 API
 let gameAPI = null;
 
 function initializeAPI() {
-  gameAPI = new GameAPI(); // 透過 /api/proxy
-  console.log('✅ GameAPI 已初始化（透過 Proxy）');
+  if (!CONFIG.GS_WEB_APP_URL) {
+    console.error('❌ GS_WEB_APP_URL 未設定');
+    return;
+  }
+
+  gameAPI = new GameAPI(CONFIG.GS_WEB_APP_URL);
+  console.log('✅ GameAPI 已初始化（透過 Vercel Proxy）');
 }
 
 document.addEventListener('DOMContentLoaded', initializeAPI);
