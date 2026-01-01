@@ -14,8 +14,9 @@
   <!-- 頁頭 -->
   <div class="header">
     <h1>🐺 線上狼人殺</h1>
-    <div> 
+    <div>
       <span class="player-info">玩家: <strong id="playerName"></strong></span>
+      <button class="btn-info" id="playerInfoBtn">我的資訊</button>
       <button class="btn-danger" onclick="logout()">登出</button>
     </div>
   </div>
@@ -60,6 +61,16 @@
     style="position: absolute; left: 20px; bottom: 20px; padding: 10px 15px;">
     退出房間狀態
   </button>
+  <!-- 玩家資訊 Modal -->
+  <div id="playerInfoModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closePlayerInfo()">&times;</span>
+      <h3>玩家資訊</h3>
+      <div id="playerInfoContent">
+        載入中...
+      </div>
+    </div>
+  </div>
 
   <!-- 遊戲區域 -->
   <div class="game-area" id="gameArea">
