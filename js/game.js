@@ -26,51 +26,78 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ================= 玩家資訊彈窗 =================
   const playerInfoBtn = document.getElementById('playerInfoBtn');
-  if (playerInfoBtn) {
-    playerInfoBtn.addEventListener('click', async () => {
-      const modal = document.getElementById('playerInfoModal');
-      const content = document.getElementById('playerInfoContent');
+if (playerInfoBtn) {
+  playerInfoBtn.addEventListener('click', async () => {
+    const modal = document.getElementById('playerInfoModal');
+    const content = document.getElementById('playerInfoContent');
+    const playId = localStorage.getItem(CONFIG.STORAGE_KEYS.playId);
 
-      try {
-        const res = await gameAPI.getPlayerStats(playId);
-        const data = res.data || res;
+    try {
+      const res = await gameAPI.post({ action: 'getPlayerStats', playId });
+      const data = res.data || res;
 
-        content.innerHTML = `
-          <p><strong>Play ID:</strong> ${data.playId}</p>
+      content.innerHTML = `
+        <div style="text-align:center;">
+          <img src="${data.avatar || 'https://via.placeholder.com/80'}" 
+               style="width:80px;height:80px;border-radius:50%;margin-bottom:10px;">
           <p><strong>名字:</strong> ${data.name}</p>
           <p><strong>勝場:</strong> ${data.wins}</p>
           <p><strong>敗場:</strong> ${data.losses}</p>
           <p><strong>勝率:</strong> ${data.winRate}%</p>
-        `;
-      } catch (e) {
-        content.textContent = '載入玩家資訊失敗';
-        console.error(e);
-      }
+        </div>
+      `;
 
       modal.style.display = 'flex';
-    });
-  }
+    } catch (e) {
+      content.textContent = '載入玩家資訊失敗';
+      console.error(e);
+    }
+  });
+}
 
   // ================= 大廳更換頭像 =================
   const lobbyAvatarBtn = document.getElementById('lobbyChangeAvatarBtn');
-  if (lobbyAvatarBtn) {
-    lobbyAvatarBtn.addEventListener('click', () => {
-      changeMyAvatar(playerId);
-    });
-  }
+if (lobbyAvatarBtn) {
+  lobbyAvatarBtn.addEventListener('click', () => changeMyAvatar());
+}
 
-  // ⭐ 已在房間 → 自動回房
-  if (roomId && playerId) {
-    console.log('🔁 偵測到玩家已在房間，嘗試自動回房', roomId);
-    rejoinRoom(roomId, playerId);
-    return;
-  }
+function changeMyAvatar() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
 
-  // ✅ 正常顯示大廳
-  document.getElementById('playerName').textContent = playerName || '玩家';
-  refreshRoomList();
-  setInterval(refreshRoomList, 5000);
-});
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const res = await gameAPI.post({
+          action: 'uploadAvatar',
+          dataUrl: reader.result,
+          filename: file.name
+        });
+
+        if (res.error) return alert('上傳失敗: ' + res.error);
+
+        // 更新本地與 Modal
+        localStorage.setItem(CONFIG.STORAGE_KEYS.avatarUrl, res.data);
+        alert('頭像已更新');
+
+        // 刷新 Modal 內頭像
+        const img = document.querySelector('#playerInfoContent img');
+        if (img) img.src = res.data;
+      } catch (err) {
+        console.error(err);
+        alert('上傳失敗');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  input.click();
+}
 
 // ================= 全域函式 =================
 
@@ -399,19 +426,29 @@ async function submitNightAction(type, targetId) {
   }
 }
 
-async function submitMyVote() {
-  if (!state.myVote) {
+async function submitMyVote(targetId) {
+  if (!targetId) {
     alert('請選擇投票對象');
     return;
   }
   try {
-    await gameAPI.submitVote(state.roomId, state.playerId, state.myVote);
-    await pollRoom();
+    await gameAPI.post({
+      action: 'submitVote',
+      roomId: state.roomId,
+      playerId: state.playerId,
+      targetId
+    });
+    state.myVote = targetId;
+    await pollRoom(); // 刷新投票狀態
   } catch (error) {
     console.error('提交投票失敗:', error);
   }
 }
 
+// 在 pollRoom() 裡面投票按鈕改成：
+btn.onclick = () => submitMyVote(p.id);
+
+  
 async function assignRoles() {
   try {
     await gameAPI.assignRoles(state.roomId, state.playerId);
