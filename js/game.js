@@ -25,32 +25,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 玩家資訊彈窗
   const playerInfoBtn = document.getElementById('playerInfoBtn');
-  if (playerInfoBtn) {
-    playerInfoBtn.addEventListener('click', async () => {
-      const modal = document.getElementById('playerInfoModal');
-      const content = document.getElementById('playerInfoContent');
+    if (playerInfoBtn) {
+      playerInfoBtn.addEventListener('click', async () => {
+        const modal = document.getElementById('playerInfoModal');
+        const content = document.getElementById('playerInfoContent');
+    
+        try {
+          const res = await gameAPI.post({ action: 'getPlayerStats', playId });
+          const data = res.data || res;
+    
+          content.innerHTML = `
+            <div style="text-align:center;">
+              <img src="${data.avatar || 'https://via.placeholder.com/80'}" 
+                   style="width:80px;height:80px;border-radius:50%;margin-bottom:10px;">
+              <p><strong>名字:</strong> ${data.name}</p>
+              <p><strong>勝場:</strong> ${data.wins}</p>
+              <p><strong>敗場:</strong> ${data.losses}</p>
+              <p><strong>勝率:</strong> ${data.winRate}%</p>
+            </div>
+          `;
+          modal.style.display = 'flex'; // 🔹 改用 flex 顯示
+        } catch (e) {
+          content.textContent = '載入玩家資訊失敗';
+          console.error(e);
+        }
+      });
+    }
 
-      try {
-        const res = await gameAPI.post({ action: 'getPlayerStats', playId });
-        const data = res.data || res;
-
-        content.innerHTML = `
-          <div style="text-align:center;">
-            <img src="${data.avatar || 'https://via.placeholder.com/80'}" 
-                 style="width:80px;height:80px;border-radius:50%;margin-bottom:10px;">
-            <p><strong>名字:</strong> ${data.name}</p>
-            <p><strong>勝場:</strong> ${data.wins}</p>
-            <p><strong>敗場:</strong> ${data.losses}</p>
-            <p><strong>勝率:</strong> ${data.winRate}%</p>
-          </div>
-        `;
-        modal.style.display = 'flex';
-      } catch (e) {
-        content.textContent = '載入玩家資訊失敗';
-        console.error(e);
-      }
-    });
-  }
 
   // 大廳更換頭像
   document.getElementById('lobbyChangeAvatarBtn')?.addEventListener('click', changeMyAvatar);
@@ -279,7 +280,8 @@ async function pollRoom() {
           <div>
             <div style="display:flex; align-items:center; gap:5px;">
               <span class="player-name">${p.name}</span>
-              ${p.id === state.playerId && p.role ? `<img src="${roleImages[p.role]}" class="role-icon" style="width:20px; height:20px;">` : ''}
+              <!-- 🔹 只有自己看到角色圖 -->
+              ${p.id === state.playerId ? `<img src="${roleImages[p.role]}" class="role-icon" style="width:20px; height:20px;">` : ''}
             </div>
             <div class="player-status ${p.alive ? 'alive' : 'dead'}">
               ${p.alive ? '🟢 存活' : '⚫ 死亡'}
@@ -306,7 +308,26 @@ async function pollRoom() {
 
     // 房主控制
     const isHost = result.hostId===state.playerId;
-    document.getElementById('hostControlDiv').style.display = isHost?'block':'none';
+    const hostDiv = document.getElementById('hostControlDiv');
+    hostDiv.style.display = isHost ? 'block' : 'none';
+    
+    // 🔹 控制「結束夜晚」與「結束投票」按鈕
+    const resolveNightBtn = document.getElementById('resolveNightBtn');
+    const resolveVoteBtn = document.getElementById('resolveVoteBtn');
+    
+    if(isHost){
+      if(result.phase==='night' || result.phase==='rolesAssigned'){
+        resolveNightBtn.style.display = 'inline-block';
+        resolveVoteBtn.style.display = 'none';
+      } else if(result.phase==='day'){
+        resolveNightBtn.style.display = 'none';
+        resolveVoteBtn.style.display = 'inline-block';
+      } else {
+        resolveNightBtn.style.display = 'none';
+        resolveVoteBtn.style.display = 'none';
+      }
+    }
+
 
     // 夜晚行動
     const nightDiv = document.getElementById('nightActionDiv');
