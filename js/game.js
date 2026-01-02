@@ -315,13 +315,18 @@ async function pollRoom() {
     const resolveNightBtn = document.getElementById('resolveNightBtn');
     const resolveVoteBtn = document.getElementById('resolveVoteBtn');
     
-    if(isHost){
-      if(result.phase==='night' || result.phase==='rolesAssigned'){
-        resolveNightBtn.style.display = 'inline-block';
-        resolveVoteBtn.style.display = 'none';
-      } else if(result.phase==='day'){
-        resolveNightBtn.style.display = 'none';
-        resolveVoteBtn.style.display = 'inline-block';
+    if(resolveNightBtn && resolveVoteBtn){
+      if(isHost){
+        if(result.phase==='night' || result.phase==='rolesAssigned'){
+          resolveNightBtn.style.display = 'inline-block';
+          resolveVoteBtn.style.display = 'none';
+        } else if(result.phase==='day'){
+          resolveNightBtn.style.display = 'none';
+          resolveVoteBtn.style.display = 'inline-block';
+        } else {
+          resolveNightBtn.style.display = 'none';
+          resolveVoteBtn.style.display = 'none';
+        }
       } else {
         resolveNightBtn.style.display = 'none';
         resolveVoteBtn.style.display = 'none';
