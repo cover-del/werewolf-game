@@ -141,17 +141,13 @@ async function refreshRoomList() {
   try {
     const res = await gameAPI.listRooms();
 
-    // ⭐ 超保險解析
-    let rooms = [];
+    if (!res || res.success !== true) {
+      throw new Error(res?.error || 'API 回傳失敗');
+    }
 
-    if (Array.isArray(res)) {
-      rooms = res;
-    } else if (res && Array.isArray(res.data)) {
-      rooms = res.data;
-    } else if (res && Array.isArray(res.rooms)) {
-      rooms = res.rooms;
-    } else {
-      throw new Error('listRooms 回傳格式不正確');
+    const rooms = res.data;
+    if (!Array.isArray(rooms)) {
+      throw new Error('listRooms data 不是陣列');
     }
 
     const roomList = document.getElementById('roomList');
@@ -170,7 +166,7 @@ async function refreshRoomList() {
         <div class="room-info">
           <div class="room-id">房號: ${room.id}</div>
           <div class="room-detail">
-            房主: ${room.hostName || '-'} | 玩家: ${room.playerCount || 0}
+            房主: ${room.hostName} | 玩家: ${room.playerCount}
           </div>
         </div>
         <button class="room-join-btn"
