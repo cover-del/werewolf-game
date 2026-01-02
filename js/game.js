@@ -98,29 +98,32 @@ window.addEventListener('beforeunload', () => {
 });
 
 // 手動清除房間狀態
-document.getElementById('manualLeaveBtn')?.addEventListener('click', async () => {
-  if (!confirm('確定要退出房間狀態嗎？')) return;
+const manualLeaveBtn = document.getElementById('manualLeaveBtn');
+if (manualLeaveBtn) {
+  manualLeaveBtn.addEventListener('click', async () => {
+    if (!confirm('確定要退出房間狀態嗎？')) return;
 
-  const roomId = localStorage.getItem(CONFIG.STORAGE_KEYS.roomId);
-  const playerId = localStorage.getItem(CONFIG.STORAGE_KEYS.playerId);
+    const roomId = localStorage.getItem(CONFIG.STORAGE_KEYS.roomId);
+    const playerId = localStorage.getItem(CONFIG.STORAGE_KEYS.playerId);
 
-  if (roomId && playerId) {
-    try {
-      await gameAPI.leaveRoom(roomId, playerId);
-    } catch {
-      console.warn('手動退出通知後端失敗（可忽略）');
+    if (roomId && playerId) {
+      try {
+        await gameAPI.leaveRoom(roomId, playerId);
+      } catch {
+        console.warn('手動退出通知後端失敗（可忽略）');
+      }
     }
-  }
 
-  localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
-  localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
+    localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
+    localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
 
-  state = { roomId: null, playerId: null, myVote: null, phase: null };
-  if (pollTimer) clearInterval(pollTimer);
+    state = { roomId: null, playerId: null, myVote: null, phase: null };
+    if (pollTimer) clearInterval(pollTimer);
 
-  refreshRoomList();
-  alert('已退出房間狀態');
-});
+    refreshRoomList();
+    alert('已退出房間狀態');
+  });
+}
 
 
 async function logout() {
