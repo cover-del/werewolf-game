@@ -139,17 +139,25 @@ async function joinRoom() {
 
 async function refreshRoomList() {
   try {
-    const res = await gameAPI.listRooms();
-    if (!res || res.success !== true) throw new Error(res?.error || 'API 回傳失敗');
+    const raw = await gameAPI.listRooms();
+    console.log('RAW listRooms:', raw);
 
-    const rooms = res.data;
-    if (!Array.isArray(rooms)) throw new Error('listRooms data 不是陣列');
+    // 🔥 超強防呆（直接拆）
+    const res = raw?.data?.success !== undefined ? raw.data : raw;
+
+    if (!res || res.success !== true) {
+      console.error('listRooms 格式錯誤:', res);
+      throw new Error('API 回傳格式錯誤');
+    }
+
+    const rooms = res.data || [];
 
     const roomList = document.getElementById('roomList');
     roomList.innerHTML = '';
 
     if (rooms.length === 0) {
-      roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">目前沒有房間</div>';
+      roomList.innerHTML =
+        '<div style="text-align:center;color:#999;padding:20px;">目前沒有房間</div>';
       return;
     }
 
@@ -170,8 +178,9 @@ async function refreshRoomList() {
       `;
       roomList.appendChild(div);
     });
-  } catch (error) {
-    console.error('刷新房間列表失敗:', error);
+
+  } catch (err) {
+    console.error('刷新房間列表失敗:', err);
     document.getElementById('roomList').innerHTML =
       '<div style="text-align:center;color:red;padding:20px;">刷新房間列表失敗</div>';
   }
