@@ -368,6 +368,62 @@ async function pollRoom() {
     } else voteDiv.style.display='none';
 
   } catch(err){ console.error('輪詢房間失敗:', err); }
+  // ===== Debug 面板 =====
+// ===== Debug 面板 =====
+(function(){
+  let debugDiv = document.getElementById('debugPanel');
+  if(!debugDiv){
+    debugDiv = document.createElement('div');
+    debugDiv.id = 'debugPanel';
+    debugDiv.style.position = 'fixed';
+    debugDiv.style.bottom = '0';
+    debugDiv.style.right = '0';
+    debugDiv.style.background = 'rgba(0,0,0,0.7)';
+    debugDiv.style.color = '#fff';
+    debugDiv.style.padding = '10px';
+    debugDiv.style.fontSize = '12px';
+    debugDiv.style.zIndex = '9999';
+    debugDiv.style.maxWidth = '300px';
+    debugDiv.style.fontFamily = 'monospace';
+    document.body.appendChild(debugDiv);
+  }
+
+  const resolveNightBtn = document.getElementById('resolveNightBtn');
+  const resolveVoteBtn = document.getElementById('resolveVoteBtn');
+  const assignRolesBtn = document.getElementById('assignRolesBtn');
+
+  // 🔹 加一個強制顯示按鈕的 checkbox
+  if(!document.getElementById('forceHostButtons')){
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = 'forceHostButtons';
+    const label = document.createElement('label');
+    label.htmlFor = 'forceHostButtons';
+    label.textContent = ' Force Host Buttons';
+    label.style.marginLeft = '5px';
+    debugDiv.appendChild(document.createElement('br'));
+    debugDiv.appendChild(checkbox);
+    debugDiv.appendChild(label);
+  }
+
+  const forceButtons = document.getElementById('forceHostButtons')?.checked;
+
+  // 🔹 強制顯示房主按鈕
+  if(forceButtons){
+    if(assignRolesBtn) assignRolesBtn.style.display = 'inline-block';
+    if(resolveNightBtn) resolveNightBtn.style.display = 'inline-block';
+    if(resolveVoteBtn) resolveVoteBtn.style.display = 'inline-block';
+  }
+
+  debugDiv.innerHTML += `
+    <br>Phase: ${state.phase} <br>
+    IsHost: ${result.hostId===state.playerId} <br>
+    Buttons: <br>
+      分發身分: ${assignRolesBtn ? assignRolesBtn.style.display : 'n/a'} <br>
+      結束夜晚: ${resolveNightBtn ? resolveNightBtn.style.display : 'n/a'} <br>
+      結束投票: ${resolveVoteBtn ? resolveVoteBtn.style.display : 'n/a'}
+  `;
+})();
 }
 
 // ---------------------- 夜晚 / 投票 ----------------------
