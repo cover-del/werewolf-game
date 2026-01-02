@@ -5,7 +5,7 @@
 const CONFIG = {
   // ===== Vercel Proxy URL =====
   // 改成你的正確 Vercel 專案
-  GS_WEB_APP_URL: 'https://werewolf-game-ga1.vercel.app/api/proxy',
+  GS_WEB_APP_URL: 'https://prj_15xJqVAzPFubahIdqmvDPHEjOpIZ/api/proxy',
 
   // ===== 遊戲設定 =====
   POLL_INTERVAL_MS: 1500,        // 輪詢間隔（毫秒）
