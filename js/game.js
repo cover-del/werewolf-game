@@ -252,25 +252,32 @@ function enterGame(roomId, playerId) {
 // ---------------------- 房間輪詢 ----------------------
 async function pollRoom() {
   if (!state.roomId || !state.playerId) return;
+
   try {
     const res = await gameAPI.getRoomState(state.roomId, state.playerId);
     const result = res.data || res;
     if (result.error) return;
 
     state.phase = result.phase;
-    myRole = result.players[state.playerId]?.role || null;
-    document.getElementById('myRole').textContent = myRole ? CONFIG.ROLE_NAMES[myRole] || myRole : '?';
+    myRole = result.players?.[state.playerId]?.role || null;
+    document.getElementById('myRole').textContent = myRole ? (CONFIG.ROLE_NAMES[myRole] || myRole) : '?';
 
-    // 玩家列表
-    // 更新玩家列表
+    // ---------------- 玩家列表 ----------------
     const playerList = document.getElementById('playerList');
     playerList.innerHTML = '';
-    
-    const defaultAvatar = 'img/roles/villager.png'; // 預設村民頭像
+
+    const defaultAvatar = 'img/roles/villager.png';
+    const roleImages = {
+      werewolf: 'img/roles/werewolf.png',
+      seer: 'img/roles/seer.png',
+      doctor: 'img/roles/doctor.png',
+      villager: 'img/roles/villager.png'
+    };
+
     Object.values(result.players || {}).forEach(p => {
       const div = document.createElement('div');
       div.className = 'player-card';
-    
+
       div.innerHTML = `
         <div class="player-card-content" style="display:flex; align-items:center; gap:10px;">
           <img src="${p.avatar || defaultAvatar}" 
@@ -279,9 +286,8 @@ async function pollRoom() {
                onerror="this.src='${defaultAvatar}'">
           <div>
             <div style="display:flex; align-items:center; gap:5px;">
-              <span class="player-name">${p.name}</span>
-              <!-- 🔹 只有自己看到角色圖 -->
-              ${p.id === state.playerId ? `<img src="${roleImages[p.role]}" class="role-icon" style="width:20px; height:20px;">` : ''}
+              <span class="player-name">${p.name || '未知玩家'}</span>
+              ${p.id === state.playerId ? `<img src="${roleImages[p.role] || defaultAvatar}" class="role-icon" style="width:20px; height:20px;">` : ''}
             </div>
             <div class="player-status ${p.alive ? 'alive' : 'dead'}">
               ${p.alive ? '🟢 存活' : '⚫ 死亡'}
@@ -289,95 +295,113 @@ async function pollRoom() {
           </div>
         </div>
       `;
-    
       playerList.appendChild(div);
     });
 
-
-    // 聊天室
-    // 聊天室
+    // ---------------- 聊天室 ----------------
     const chatBox = document.getElementById('chatBox');
-    chatBox.innerHTML='';
-    
-    // 只顯示本房間的訊息
-    (result.chat||[])
-      .filter(msg => msg.roomId === state.roomId) 
+    chatBox.innerHTML = '';
+
+    (result.chat || [])
+      .filter(msg => msg.roomId === state.roomId)
       .forEach(msg => {
         const div = document.createElement('div');
         div.className = 'chat-message';
-        if(msg.system){
+        if (msg.system) {
           div.classList.add('chat-system');
-          div.textContent = `[系統] ${msg.text}`;
+          div.textContent = `[系統] ${msg.text || ''}`;
         } else {
-          div.innerHTML = `<span class="chat-player">${msg.name}:</span> ${msg.text}`;
+          div.innerHTML = `<span class="chat-player">${msg.name || '未知'}:</span> ${msg.text || ''}`;
         }
         chatBox.appendChild(div);
-    });
+      });
+
     chatBox.scrollTop = chatBox.scrollHeight;
 
-
-    // 房主控制
-    // 房主控制
+    // ---------------- 房主控制 ----------------
     const isHost = result.hostId === state.playerId;
     const hostDiv = document.getElementById('hostControlDiv');
-    hostDiv.style.display = isHost ? 'block' : 'none';
-    
-    if(isHost){
+    if (hostDiv) hostDiv.style.display = isHost ? 'block' : 'none';
+
+    if (isHost) {
       const resolveNightBtn = document.getElementById('resolveNightBtn');
       const resolveVoteBtn = document.getElementById('resolveVoteBtn');
       const assignRolesBtn = document.getElementById('assignRolesBtn');
-    
-      // 🔹 大廳階段只顯示「分配角色」按鈕
-      if(assignRolesBtn) assignRolesBtn.style.display = result.phase === 'lobby' ? 'inline-block' : 'none';
-    
-      // 🔹 夜晚階段顯示「結束夜晚」
-      if(resolveNightBtn) resolveNightBtn.style.display = (result.phase === 'night' || result.phase === 'rolesAssigned') ? 'inline-block' : 'none';
-    
-      // 🔹 白天階段顯示「結束投票」
-      if(resolveVoteBtn) resolveVoteBtn.style.display = result.phase === 'day' ? 'inline-block' : 'none';
-    }
-    
 
-    // 夜晚行動
+      if (assignRolesBtn) assignRolesBtn.style.display = result.phase === 'lobby' ? 'inline-block' : 'none';
+      if (resolveNightBtn) resolveNightBtn.style.display = (result.phase === 'night' || result.phase === 'rolesAssigned') ? 'inline-block' : 'none';
+      if (resolveVoteBtn) resolveVoteBtn.style.display = result.phase === 'day' ? 'inline-block' : 'none';
+    }
+
+    // ---------------- 夜晚行動 ----------------
     const nightDiv = document.getElementById('nightActionDiv');
     const nightInfo = document.getElementById('nightActionInfo');
     const nightTargets = document.getElementById('nightTargets');
-    if((result.phase==='rolesAssigned'||result.phase==='night') && result.players[state.playerId]?.alive){
-      nightDiv.style.display='block';
-      nightTargets.innerHTML='';
-      if(myRole==='werewolf'){ nightInfo.textContent='🐺 狼人：選擇攻擊目標';
-        Object.values(result.players).filter(p=>p.alive&&p.id!==state.playerId).forEach(p=>{
-          const btn=document.createElement('button');
-          btn.className='action-btn'; btn.textContent=`攻擊 ${p.name}`;
-          btn.onclick=()=>submitNightAction('kill',p.id); nightTargets.appendChild(btn);
-        });
-      } else if(myRole==='seer'){ nightInfo.textContent='🔮 預言家：選擇查驗目標';
-        Object.values(result.players).filter(p=>p.alive&&p.id!==state.playerId).forEach(p=>{
-          const btn=document.createElement('button'); btn.className='action-btn'; btn.textContent=`查驗 ${p.name}`;
-          btn.onclick=()=>submitNightAction('check',p.id); nightTargets.appendChild(btn);
-        });
-      } else if(myRole==='doctor'){ nightInfo.textContent='⚕️ 醫生：選擇守護目標';
-        Object.values(result.players).filter(p=>p.alive).forEach(p=>{
-          const btn=document.createElement('button'); btn.className='action-btn'; btn.textContent=`守護 ${p.name}`;
-          btn.onclick=()=>submitNightAction('save',p.id); nightTargets.appendChild(btn);
-        });
-      } else { nightInfo.textContent='😴 平民：無夜晚行動'; }
-    } else nightDiv.style.display='none';
 
-    // 投票
+    if ((result.phase === 'rolesAssigned' || result.phase === 'night') && result.players?.[state.playerId]?.alive) {
+      nightDiv.style.display = 'block';
+      nightTargets.innerHTML = '';
+
+      const alivePlayers = Object.values(result.players).filter(p => p.alive && p.id !== state.playerId);
+      switch (myRole) {
+        case 'werewolf':
+          nightInfo.textContent = '🐺 狼人：選擇攻擊目標';
+          alivePlayers.forEach(p => {
+            const btn = document.createElement('button');
+            btn.className = 'action-btn';
+            btn.textContent = `攻擊 ${p.name}`;
+            btn.onclick = () => submitNightAction('kill', p.id);
+            nightTargets.appendChild(btn);
+          });
+          break;
+        case 'seer':
+          nightInfo.textContent = '🔮 預言家：選擇查驗目標';
+          alivePlayers.forEach(p => {
+            const btn = document.createElement('button');
+            btn.className = 'action-btn';
+            btn.textContent = `查驗 ${p.name}`;
+            btn.onclick = () => submitNightAction('check', p.id);
+            nightTargets.appendChild(btn);
+          });
+          break;
+        case 'doctor':
+          nightInfo.textContent = '⚕️ 醫生：選擇守護目標';
+          Object.values(result.players).filter(p => p.alive).forEach(p => {
+            const btn = document.createElement('button');
+            btn.className = 'action-btn';
+            btn.textContent = `守護 ${p.name}`;
+            btn.onclick = () => submitNightAction('save', p.id);
+            nightTargets.appendChild(btn);
+          });
+          break;
+        default:
+          nightInfo.textContent = '😴 平民：無夜晚行動';
+          break;
+      }
+    } else nightDiv.style.display = 'none';
+
+    // ---------------- 投票 ----------------
     const voteDiv = document.getElementById('voteDiv');
     const voteTargets = document.getElementById('voteTargets');
-    if(result.phase==='day' && result.players[state.playerId]?.alive){
-      voteDiv.style.display='block'; voteTargets.innerHTML='';
-      Object.values(result.players).filter(p=>p.alive && p.id!==state.playerId).forEach(p=>{
-        const btn=document.createElement('button'); btn.className='action-btn'; btn.textContent=`投票 ${p.name}`;
-        btn.style.background = state.myVote===p.id?'#e74c3c':'#667eea';
-        btn.onclick = ()=>submitMyVote(p.id);
+
+    if (result.phase === 'day' && result.players?.[state.playerId]?.alive) {
+      voteDiv.style.display = 'block';
+      voteTargets.innerHTML = '';
+      Object.values(result.players).filter(p => p.alive && p.id !== state.playerId).forEach(p => {
+        const btn = document.createElement('button');
+        btn.className = 'action-btn';
+        btn.textContent = `投票 ${p.name}`;
+        btn.style.background = state.myVote === p.id ? '#e74c3c' : '#667eea';
+        btn.onclick = () => submitMyVote(p.id);
         voteTargets.appendChild(btn);
       });
-    } else voteDiv.style.display='none';
+    } else voteDiv.style.display = 'none';
 
-  } catch(err){ console.error('輪詢房間失敗:', err); }
+  } catch (err) {
+    console.error('輪詢房間失敗:', err);
+  }
+}
+
   // ===== Debug 面板 =====
 // ===== Debug 面板 =====
 (function(){
