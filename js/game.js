@@ -307,32 +307,26 @@ async function pollRoom() {
     chatBox.scrollTop=chatBox.scrollHeight;
 
     // 房主控制
-    const isHost = result.hostId===state.playerId;
+    // 房主控制
+    const isHost = result.hostId === state.playerId;
     const hostDiv = document.getElementById('hostControlDiv');
     hostDiv.style.display = isHost ? 'block' : 'none';
     
-    // 🔹 控制「結束夜晚」與「結束投票」按鈕
-    const resolveNightBtn = document.getElementById('resolveNightBtn');
-    const resolveVoteBtn = document.getElementById('resolveVoteBtn');
+    if(isHost){
+      const resolveNightBtn = document.getElementById('resolveNightBtn');
+      const resolveVoteBtn = document.getElementById('resolveVoteBtn');
+      const assignRolesBtn = document.getElementById('assignRolesBtn');
     
-    if(resolveNightBtn && resolveVoteBtn){
-      if(isHost){
-        if(result.phase==='night' || result.phase==='rolesAssigned'){
-          resolveNightBtn.style.display = 'inline-block';
-          resolveVoteBtn.style.display = 'none';
-        } else if(result.phase==='day'){
-          resolveNightBtn.style.display = 'none';
-          resolveVoteBtn.style.display = 'inline-block';
-        } else {
-          resolveNightBtn.style.display = 'none';
-          resolveVoteBtn.style.display = 'none';
-        }
-      } else {
-        resolveNightBtn.style.display = 'none';
-        resolveVoteBtn.style.display = 'none';
-      }
+      // 🔹 大廳階段只顯示「分配角色」按鈕
+      if(assignRolesBtn) assignRolesBtn.style.display = result.phase === 'lobby' ? 'inline-block' : 'none';
+    
+      // 🔹 夜晚階段顯示「結束夜晚」
+      if(resolveNightBtn) resolveNightBtn.style.display = (result.phase === 'night' || result.phase === 'rolesAssigned') ? 'inline-block' : 'none';
+    
+      // 🔹 白天階段顯示「結束投票」
+      if(resolveVoteBtn) resolveVoteBtn.style.display = result.phase === 'day' ? 'inline-block' : 'none';
     }
-
+    
 
     // 夜晚行動
     const nightDiv = document.getElementById('nightActionDiv');
