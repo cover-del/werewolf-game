@@ -140,30 +140,54 @@ async function joinRoom() {
 async function refreshRoomList() {
   try {
     const res = await gameAPI.listRooms();
-    const rooms = res.data || [];
+
+    // ⭐ 超保險解析
+    let rooms = [];
+
+    if (Array.isArray(res)) {
+      rooms = res;
+    } else if (res && Array.isArray(res.data)) {
+      rooms = res.data;
+    } else if (res && Array.isArray(res.rooms)) {
+      rooms = res.rooms;
+    } else {
+      throw new Error('listRooms 回傳格式不正確');
+    }
+
     const roomList = document.getElementById('roomList');
     roomList.innerHTML = '';
 
-    if (!rooms.length) {
-      roomList.innerHTML = '<div style="text-align:center;color:#999;">目前沒有房間</div>';
+    if (rooms.length === 0) {
+      roomList.innerHTML =
+        '<div style="text-align:center;color:#999;padding:20px;">目前沒有房間</div>';
       return;
     }
 
-    rooms.forEach(function (room) {
+    rooms.forEach(room => {
       const div = document.createElement('div');
       div.className = 'room-item';
-      div.innerHTML =
-        '<div class="room-info">' +
-        '<div>房號: ' + room.id + '</div>' +
-        '<div>房主: ' + room.hostName + ' | 玩家: ' + room.playerCount + '</div>' +
-        '</div>' +
-        '<button onclick="document.getElementById(\'joinRoomId\').value=\'' + room.id + '\';joinRoom();">加入</button>';
+      div.innerHTML = `
+        <div class="room-info">
+          <div class="room-id">房號: ${room.id}</div>
+          <div class="room-detail">
+            房主: ${room.hostName || '-'} | 玩家: ${room.playerCount || 0}
+          </div>
+        </div>
+        <button class="room-join-btn"
+          onclick="document.getElementById('joinRoomId').value='${room.id}'; joinRoom();">
+          加入
+        </button>
+      `;
       roomList.appendChild(div);
     });
-  } catch (e) {
-    console.error('刷新房間列表失敗', e);
+
+  } catch (error) {
+    console.error('刷新房間列表失敗:', error);
+    document.getElementById('roomList').innerHTML =
+      '<div style="text-align:center;color:red;padding:20px;">刷新房間列表失敗</div>';
   }
 }
+
 
 function enterGame(roomId, playerId) {
   localStorage.setItem(CONFIG.STORAGE_KEYS.roomId, roomId);
