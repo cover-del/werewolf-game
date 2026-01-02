@@ -261,22 +261,36 @@ async function pollRoom() {
     document.getElementById('myRole').textContent = myRole ? CONFIG.ROLE_NAMES[myRole] || myRole : '?';
 
     // 玩家列表
+    // 更新玩家列表
     const playerList = document.getElementById('playerList');
     playerList.innerHTML = '';
-    const roleImages = { werewolf:'img/roles/werewolf.png', seer:'img/roles/seer.png', doctor:'img/roles/doctor.png', villager:'img/roles/villager.png' };
-    Object.values(result.players || {}).forEach(p=>{
-      const div=document.createElement('div');
-      div.className='player-card';
-      div.innerHTML=`
-        <img src="${p.avatar||'https://via.placeholder.com/50'}" class="player-avatar" onerror="this.src='https://via.placeholder.com/50'">
-        <div class="player-info-wrapper" style="display:flex;align-items:center;gap:8px;">
-          <div class="player-name">${p.name}</div>
-          ${p.id===state.playerId && p.role? `<img src="${roleImages[p.role]}" class="role-icon" style="width:24px;height:24px;">` : ''}
+    
+    const defaultAvatar = 'img/roles/villager.png'; // 預設村民頭像
+    Object.values(result.players || {}).forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'player-card';
+    
+      div.innerHTML = `
+        <div class="player-card-content" style="display:flex; align-items:center; gap:10px;">
+          <img src="${p.avatar || defaultAvatar}" 
+               class="player-avatar" 
+               style="width:50px; height:50px; border-radius:50%;" 
+               onerror="this.src='${defaultAvatar}'">
+          <div>
+            <div style="display:flex; align-items:center; gap:5px;">
+              <span class="player-name">${p.name}</span>
+              ${p.id === state.playerId && p.role ? `<img src="${roleImages[p.role]}" class="role-icon" style="width:20px; height:20px;">` : ''}
+            </div>
+            <div class="player-status ${p.alive ? 'alive' : 'dead'}">
+              ${p.alive ? '🟢 存活' : '⚫ 死亡'}
+            </div>
+          </div>
         </div>
-        <div class="player-status ${p.alive?'alive':'dead'}">${p.alive?'🟢 存活':'⚫ 死亡'}</div>
       `;
+    
       playerList.appendChild(div);
     });
+
 
     // 聊天室
     const chatBox = document.getElementById('chatBox');
