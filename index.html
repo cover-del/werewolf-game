@@ -110,11 +110,11 @@
       <!-- 房主控制 -->
       <div id="hostControlDiv" style="display: none;">
         <h3 style="color: #333; margin-bottom: 10px;">房主控制</h3>
-        <div class="action-buttons">
-          <button class="action-btn" onclick="assignRoles()">分配身分</button>
-          <button class="action-btn" id="resolveNightBtn" onclick="resolveNight()" style="display: none;">結束夜晚</button>
-          <button class="action-btn" id="resolveVoteBtn" onclick="resolveVotes()" style="display: none;">結束投票</button>
-        </div>
+          <div id="hostControlDiv" style="display:none;">
+            <button id="assignRolesBtn" onclick="assignRoles()">分配身分</button>
+            <button id="resolveNightBtn" onclick="resolveNight()">結束夜晚</button>
+            <button id="resolveVoteBtn" onclick="resolveVotes()">結束投票</button>
+          </div>
         <hr class="divider">
       </div>
 
