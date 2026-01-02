@@ -368,3 +368,20 @@ function changeMyAvatar() {
   };
   input.click();
 }
+
+window.logout = function () {
+  console.log('🚪 logout');
+
+  localStorage.removeItem('playId');
+  localStorage.removeItem('playerId');
+  localStorage.removeItem('roomId');
+  localStorage.removeItem('playerName');
+
+  if (typeof state === 'object') {
+    state.roomId = null;
+    state.playerId = null;
+    state.phase = null;
+  }
+
+  window.location.href = '?page=login';
+};
