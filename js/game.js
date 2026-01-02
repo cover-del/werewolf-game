@@ -385,3 +385,20 @@ window.logout = function () {
 
   window.location.href = '?page=login';
 };
+
+window.rejoinRoom = async function (roomId, playerId) {
+  console.log('🔁 rejoinRoom', roomId, playerId);
+
+  state.roomId = roomId;
+  state.playerId = playerId;
+  state.myVote = null;
+
+  document.getElementById('lobbyArea')?.classList.add('hidden');
+  document.getElementById('gameArea')?.classList.add('active');
+  document.getElementById('roomId').textContent = roomId;
+
+  clearInterval(pollTimer);
+  pollTimer = setInterval(pollRoom, CONFIG.POLL_INTERVAL_MS);
+
+  await pollRoom();
+};
