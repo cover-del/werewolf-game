@@ -384,7 +384,7 @@ window.logout = function () {
     state.phase = null;
   }
 
-  window.location.href = '?page=login';
+  window.location.href = 'login.html';
 };
 
 window.rejoinRoom = async function (roomId, playerId) {
