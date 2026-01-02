@@ -139,18 +139,14 @@ async function joinRoom() {
 
 async function refreshRoomList() {
   try {
-    const raw = await gameAPI.listRooms();
-    console.log('RAW listRooms:', raw);
+    const rooms = await gameAPI.listRooms();
+    console.log('RAW listRooms:', rooms);
 
-    // 🔥 超強防呆（直接拆）
-    const res = raw?.data?.success !== undefined ? raw.data : raw;
-
-    if (!res || res.success !== true) {
-      console.error('listRooms 格式錯誤:', res);
-      throw new Error('API 回傳格式錯誤');
+    // ✅ 正確判斷：listRooms 就是陣列
+    if (!Array.isArray(rooms)) {
+      console.error('listRooms 回傳不是陣列:', rooms);
+      throw new Error('listRooms 回傳格式錯誤');
     }
-
-    const rooms = res.data || [];
 
     const roomList = document.getElementById('roomList');
     roomList.innerHTML = '';
