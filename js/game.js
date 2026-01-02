@@ -295,16 +295,26 @@ async function pollRoom() {
 
 
     // 聊天室
+    // 聊天室
     const chatBox = document.getElementById('chatBox');
     chatBox.innerHTML='';
-    (result.chat||[]).forEach(msg=>{
-      const div=document.createElement('div');
-      div.className='chat-message';
-      if(msg.system){ div.classList.add('chat-system'); div.textContent=`[系統] ${msg.text}`; }
-      else div.innerHTML=`<span class="chat-player">${msg.name}:</span> ${msg.text}`;
-      chatBox.appendChild(div);
+    
+    // 只顯示本房間的訊息
+    (result.chat||[])
+      .filter(msg => msg.roomId === state.roomId) 
+      .forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'chat-message';
+        if(msg.system){
+          div.classList.add('chat-system');
+          div.textContent = `[系統] ${msg.text}`;
+        } else {
+          div.innerHTML = `<span class="chat-player">${msg.name}:</span> ${msg.text}`;
+        }
+        chatBox.appendChild(div);
     });
-    chatBox.scrollTop=chatBox.scrollHeight;
+    chatBox.scrollTop = chatBox.scrollHeight;
+
 
     // 房主控制
     // 房主控制
