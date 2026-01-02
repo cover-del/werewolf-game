@@ -370,18 +370,27 @@ function changeMyAvatar() {
   input.click();
 }
 
+// ================= 登出 =================
 window.logout = function () {
   console.log('🚪 logout');
 
-  localStorage.clear();
+  // 1️⃣ 清掉所有 localStorage
+  localStorage.removeItem(CONFIG.STORAGE_KEYS.playId);
+  localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
+  localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
+  localStorage.removeItem(CONFIG.STORAGE_KEYS.playerName);
 
+  // 2️⃣ 清掉遊戲狀態
   state.roomId = null;
   state.playerId = null;
   state.phase = null;
 
-  // 絕對路徑，GitHub Pages 最安全
-  window.location.replace(location.origin + '/werewolf-game/login.html');
+  // 3️⃣ 絕對路徑跳轉 login.html
+  // ✅ GitHub Pages 最穩方式
+  const loginUrl = location.origin + '/werewolf-game/login.html';
+  window.location.replace(loginUrl);
 };
+
 
 window.rejoinRoom = async function (roomId, playerId) {
   console.log('🔁 rejoinRoom', roomId, playerId);
