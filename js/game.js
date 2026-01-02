@@ -34,28 +34,41 @@ document.addEventListener('DOMContentLoaded', () => {
     playerInfoBtn.addEventListener('click', async () => {
       const modal = document.getElementById('playerInfoModal');
       const content = document.getElementById('playerInfoContent');
+    
       try {
         const res = await gameAPI.getPlayerStats(playId);
+        
+        // 嘗試抓不同欄位
+        let data = {};
+        if (res.success && res.player) {
+          data = res.player;
+        } else if (res.data) {
+          data = res.data;
+        } else {
+          data = res; // fallback
+        }
+    
+        // 安全抓欄位，如果沒有就顯示 "-"
+        const displayId = data.id || data.playId || '-';
+        const displayName = data.username || data.name || '-';
+        const displayWins = typeof data.wins === 'number' ? data.wins : '-';
+        const displayLosses = typeof data.losses === 'number' ? data.losses : '-';
+        const displayWinRate = typeof data.winRate === 'number' ? data.winRate : '-';
+    
         content.innerHTML = `
-          <p><strong>Play ID:</strong> ${res.playId}</p>
-          <p><strong>名字:</strong> ${res.name}</p>
-          <p><strong>勝場:</strong> ${res.wins}</p>
-          <p><strong>敗場:</strong> ${res.losses}</p>
-          <p><strong>勝率:</strong> ${res.winRate}%</p>
+          <p><strong>Play ID:</strong> ${displayId}</p>
+          <p><strong>名字:</strong> ${displayName}</p>
+          <p><strong>勝場:</strong> ${displayWins}</p>
+          <p><strong>敗場:</strong> ${displayLosses}</p>
+          <p><strong>勝率:</strong> ${displayWinRate}%</p>
         `;
       } catch (e) {
         content.textContent = '載入玩家資訊失敗';
         console.error(e);
       }
+    
       modal.style.display = 'flex';
     });
-  }
-
-  // 大廳更換頭像
-  const lobbyAvatarBtn = document.getElementById('lobbyChangeAvatarBtn');
-  if (lobbyAvatarBtn) {
-    lobbyAvatarBtn.addEventListener('click', () => changeMyAvatar());
-  }
 
   // 已在房間 → 自動回房
   if (roomId && playerId) {
