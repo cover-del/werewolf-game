@@ -373,18 +373,14 @@ function changeMyAvatar() {
 window.logout = function () {
   console.log('🚪 logout');
 
-  localStorage.removeItem('playId');
-  localStorage.removeItem('playerId');
-  localStorage.removeItem('roomId');
-  localStorage.removeItem('playerName');
+  localStorage.clear();
 
-  if (typeof state === 'object') {
-    state.roomId = null;
-    state.playerId = null;
-    state.phase = null;
-  }
+  state.roomId = null;
+  state.playerId = null;
+  state.phase = null;
 
-  window.location.href = 'login.html';
+  // 絕對路徑，GitHub Pages 最安全
+  window.location.replace(location.origin + '/werewolf-game/login.html');
 };
 
 window.rejoinRoom = async function (roomId, playerId) {
