@@ -1,6 +1,5 @@
-
 /**
- * 狼人殺遊戲 - 主遊戲邏輯（自動化版 ES2018 Safe）
+ * 狼人殺遊戲 - 主遊戲邏輯（修正版 ES2018 Safe）
  */
 
 let state = {
@@ -12,7 +11,6 @@ let state = {
 let myRole = null;
 let pollTimer = null;
 
-// ================= 初始化 =================
 // ================= 初始化 =================
 document.addEventListener('DOMContentLoaded', async function () {
   const playId = localStorage.getItem(CONFIG.STORAGE_KEYS.playId);
@@ -26,13 +24,13 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   document.getElementById('playerName').textContent = playerName || '玩家';
-  
+
   // 嘗試自動回房
   if (roomId && playerId) {
     try {
       const res = await gameAPI.getRoomState(roomId, playerId);
       if (!res.error) {
-        rejoinRoom(roomId, playerId);
+        await rejoinRoom(roomId, playerId);
         return; // 成功回房就結束初始化
       } else {
         console.warn('自動回房失敗，清除 localStorage:', res.error);
@@ -52,7 +50,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   refreshRoomList();
   setInterval(refreshRoomList, 5000);
-});
 
   // 玩家資訊 Modal
   const playerInfoBtn = document.getElementById('playerInfoBtn');
@@ -64,7 +61,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
       try {
         const res = await gameAPI.getPlayerStats(playId);
-        const data = res.data || res || {};
+        const data = res?.data || res || {};
 
         content.innerHTML =
           '<p><strong>Play ID:</strong> ' + (data.playId || '-') + '</p>' +
@@ -88,19 +85,9 @@ document.addEventListener('DOMContentLoaded', async function () {
       changeMyAvatar();
     });
   }
-
-  // 自動回房
-  if (roomId && playerId) {
-    rejoinRoom(roomId, playerId);
-    return;
-  }
-
-  document.getElementById('playerName').textContent = playerName || '玩家';
-  refreshRoomList();
-  setInterval(refreshRoomList, 5000);
 });
 
-// ================= 共用 =================
+// ================= 共用函式 =================
 function closePlayerInfo() {
   document.getElementById('playerInfoModal').style.display = 'none';
 }
@@ -128,7 +115,7 @@ async function createRoom() {
       '',
       customRoomId || undefined
     );
-    const result = res.data || res;
+    const result = res?.data || res;
     if (result.error) {
       errorDiv.textContent = result.error;
     } else {
@@ -156,7 +143,7 @@ async function joinRoom() {
       localStorage.getItem(CONFIG.STORAGE_KEYS.playId),
       ''
     );
-    const result = res.data || res;
+    const result = res?.data || res;
     if (result.error) {
       errorDiv.textContent = result.error;
     } else {
@@ -175,7 +162,8 @@ async function refreshRoomList() {
 
   try {
     const res = await gameAPI.listRooms();
-    const rooms = Array.isArray(res?.data) ? res.data : [];
+    const roomsObj = res?.data || {};
+    const rooms = Object.values(roomsObj);
 
     roomList.innerHTML = '';
     if (rooms.length === 0) {
@@ -190,7 +178,7 @@ async function refreshRoomList() {
         <div class="room-info">
           <div class="room-id">房號: ${room.id}</div>
           <div class="room-detail">
-            房主: ${room.hostName} | 玩家: ${room.playerCount}
+            房主: ${room.hostName || '-'} | 玩家: ${Object.keys(room.players || {}).length}
           </div>
         </div>
         <button class="room-join-btn"
@@ -200,7 +188,6 @@ async function refreshRoomList() {
       `;
       roomList.appendChild(div);
     });
-
   } catch (err) {
     console.error('刷新房間列表失敗:', err);
     roomList.innerHTML = '<div style="text-align:center;color:red;padding:20px;">刷新房間列表失敗</div>';
@@ -215,8 +202,8 @@ function enterGame(roomId, playerId) {
   state.playerId = playerId;
   state.myVote = null;
 
-  document.getElementById('lobbyArea').classList.add('hidden');
-  document.getElementById('gameArea').classList.add('active');
+  document.getElementById('lobbyArea')?.classList.add('hidden');
+  document.getElementById('gameArea')?.classList.add('active');
   document.getElementById('roomId').textContent = roomId;
 
   pollRoom();
@@ -224,39 +211,36 @@ function enterGame(roomId, playerId) {
   pollTimer = setInterval(pollRoom, CONFIG.POLL_INTERVAL_MS);
 }
 
-// ================= 核心輪詢（自動化夜晚/投票） =================
+// ================= 核心輪詢 =================
 async function pollRoom() {
   if (!state.roomId || !state.playerId) return;
 
   try {
     const res = await gameAPI.getRoomState(state.roomId, state.playerId);
     const result = res?.data || {};
+
     if (result.error) {
-      console.error('pollRoom 錯誤:', result.error);
+      console.warn('pollRoom 錯誤:', result.error);
+      if (result.error.includes('房間不存在')) {
+        localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
+        localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
+        location.reload();
+      }
       return;
     }
 
     const players = result.players || {};
     const me = players[state.playerId] || null;
 
-    // 更新角色
     myRole = me?.role || null;
-    document.getElementById('myRole').textContent =
-      myRole ? CONFIG.ROLE_NAMES[myRole] || '?' : '?';
+    document.getElementById('myRole').textContent = myRole ? CONFIG.ROLE_NAMES[myRole] || '?' : '?';
 
-    // 更新玩家列表
     updatePlayerList(players);
-
-    // 更新聊天室
     updateChat(result.chat || []);
 
-    // 自動流程
     const phase = result.phase;
     switch (phase) {
       case 'rolesAssigned':
-        if (me?.isHost) await resolveNight();
-        showNightUI();
-        break;
       case 'night':
         showNightUI();
         break;
@@ -274,7 +258,8 @@ async function pollRoom() {
     console.error('pollRoom 失敗', e);
   }
 }
-// ================= 顯示函式 =================
+
+// ================= 顯示 =================
 function updatePlayerList(players) {
   const playerList = document.getElementById('playerList');
   playerList.innerHTML = '';
@@ -317,33 +302,20 @@ function updateChat(chatArray) {
 }
 
 function showNightUI() {
-  document.getElementById('nightArea').classList.remove('hidden');
-  document.getElementById('dayArea').classList.add('hidden');
-  document.getElementById('endArea').classList.add('hidden');
+  document.getElementById('nightActionDiv').style.display = 'block';
+  document.getElementById('voteDiv').style.display = 'none';
 }
 
 function showDayUI() {
-  document.getElementById('nightArea').classList.add('hidden');
-  document.getElementById('dayArea').classList.remove('hidden');
-  document.getElementById('endArea').classList.add('hidden');
+  document.getElementById('nightActionDiv').style.display = 'none';
+  document.getElementById('voteDiv').style.display = 'block';
 }
 
 function showEndUI(winner, players) {
-  document.getElementById('nightArea').classList.add('hidden');
-  document.getElementById('dayArea').classList.add('hidden');
-  document.getElementById('endArea').classList.remove('hidden');
-  document.getElementById('endMessage').textContent = `遊戲結束！勝利方: ${winner === 'villagers' ? '村民' : '狼人'}`;
-
-  const allPlayersDiv = document.getElementById('allPlayers');
-  allPlayersDiv.innerHTML = '';
-  Object.values(players).forEach(p => {
-    const div = document.createElement('div');
-    div.textContent = `${p.name} - ${CONFIG.ROLE_NAMES[p.role] || '?'}`;
-    allPlayersDiv.appendChild(div);
-  });
+  alert(`遊戲結束！勝利方: ${winner === 'villagers' ? '村民' : '狼人'}`);
 }
 
-// ================= 夜晚 / 投票 / 角色指令 =================
+// ================= 夜晚 / 投票 / 角色 =================
 async function submitNightAction(type, targetId) {
   await gameAPI.submitNightAction(state.roomId, state.playerId, { type, targetId });
 }
@@ -351,15 +323,9 @@ async function submitMyVote() {
   if (!state.myVote) return alert('請選擇投票對象');
   await gameAPI.submitVote(state.roomId, state.playerId, state.myVote);
 }
-async function assignRoles() {
-  await gameAPI.assignRoles(state.roomId, state.playerId);
-}
-async function resolveNight() {
-  try { await gameAPI.resolveNight(state.roomId, state.playerId); } catch(e){ console.error(e);}
-}
-async function resolveVotes() {
-  try { await gameAPI.resolveVotes(state.roomId, state.playerId); } catch(e){ console.error(e);}
-}
+async function assignRoles() { await gameAPI.assignRoles(state.roomId, state.playerId); }
+async function resolveNight() { try { await gameAPI.resolveNight(state.roomId, state.playerId); } catch(e){} }
+async function resolveVotes() { try { await gameAPI.resolveVotes(state.roomId, state.playerId); } catch(e){} }
 async function sendChat() {
   const input = document.getElementById('chatInput');
   if (!input.value.trim()) return;
@@ -374,7 +340,7 @@ async function leaveRoom() {
   location.reload();
 }
 
-// ================= 頭像更換 =================
+// ================= 頭像 =================
 function changeMyAvatar() {
   const input = document.createElement('input');
   input.type = 'file';
@@ -394,29 +360,20 @@ function changeMyAvatar() {
 
 // ================= 登出 =================
 window.logout = function () {
-  console.log('🚪 logout');
-
-  // 1️⃣ 清掉所有 localStorage
   localStorage.removeItem(CONFIG.STORAGE_KEYS.playId);
   localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
   localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
   localStorage.removeItem(CONFIG.STORAGE_KEYS.playerName);
 
-  // 2️⃣ 清掉遊戲狀態
   state.roomId = null;
   state.playerId = null;
   state.phase = null;
 
-  // 3️⃣ 絕對路徑跳轉 login.html
-  // ✅ GitHub Pages 最穩方式
-  const loginUrl = location.origin + '/werewolf-game/login.html';
-  window.location.replace(loginUrl);
+  window.location.replace(location.origin + '/werewolf-game/login.html');
 };
 
-
+// ================= 回房 =================
 window.rejoinRoom = async function (roomId, playerId) {
-  console.log('🔁 rejoinRoom', roomId, playerId);
-
   try {
     const res = await gameAPI.getRoomState(roomId, playerId);
     if (res.error) throw new Error(res.error);
@@ -437,8 +394,6 @@ window.rejoinRoom = async function (roomId, playerId) {
     console.warn('回房失敗，清除 localStorage:', e.message);
     localStorage.removeItem('roomId');
     localStorage.removeItem('playerId');
-    location.reload(); // 回到大廳
+    location.reload();
   }
 };
-
-
