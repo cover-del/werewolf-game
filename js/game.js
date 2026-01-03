@@ -19,9 +19,9 @@ document.addEventListener('DOMContentLoaded', async function () {
   let playerId = localStorage.getItem(CONFIG.STORAGE_KEYS.playerId);
 
   if (!playId) {
-    window.location.href = 'login.html';
-    return;
+    window.location.href = 'login.html'; // ✅ 直接跳轉，不用 return
   }
+
 
   document.getElementById('playerName').textContent = playerName || '玩家';
 
@@ -50,6 +50,18 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   refreshRoomList();
   setInterval(refreshRoomList, 5000);
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const logoutBtn = document.querySelector('button.btn-danger'); // 或加個 id
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', window.logout);
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const createBtn = document.getElementById('createRoomBtn');
+    if (createBtn) createBtn.addEventListener('click', createRoom);
+  });
 
   // 玩家資訊 Modal
   const playerInfoBtn = document.getElementById('playerInfoBtn');
@@ -210,6 +222,7 @@ function enterGame(roomId, playerId) {
   clearInterval(pollTimer);
   pollTimer = setInterval(pollRoom, CONFIG.POLL_INTERVAL_MS);
 }
+
 
 // ================= 核心輪詢 =================
 async function pollRoom() {
@@ -397,3 +410,4 @@ window.rejoinRoom = async function (roomId, playerId) {
     location.reload();
   }
 };
+
