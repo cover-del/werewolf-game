@@ -173,21 +173,18 @@ async function pollRoom() {
     const res = await gameAPI.getRoomState(state.roomId, state.playerId);
     const result = res?.data || {};
 
-    if (result.error) {
-      console.warn('pollRoom 錯誤:', result.error);
-      // 如果是房間不存在，可能是 Sheet 尚未建立，這裡可以先建立或跳過
-      if (result.error.includes('房間不存在')) {
-        // 嘗試自動重新建立房間或回大廳
-        console.log('房間不存在，可能是 Sheet 尚未更新');
-      }
+    if (!result.id) {
+      console.warn('房間不存在');
+      localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
+      localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
+      location.reload();
       return;
     }
 
-    // 正常渲染玩家列表、聊天室
     const players = result.players || {};
-    const me = players[state.playerId] || {};
-    myRole = me.role || null;
-    document.getElementById('myRole').textContent = myRole ? CONFIG.ROLE_NAMES[myRole] : '?';
+    const me = players[state.playerId] || null;
+    myRole = me?.role || null;
+    document.getElementById('myRole').textContent = myRole ? CONFIG.ROLE_NAMES[myRole] || '?' : '?';
 
     updatePlayerList(players);
     updateChat(result.chat || []);
