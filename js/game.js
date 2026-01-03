@@ -122,16 +122,35 @@ async function joinRoom() {
   }
 }
 
+let lastRoomIds = []; // 記錄上一次房間 ID
+
 async function refreshRoomList() {
   const roomList = document.getElementById('roomList');
-  roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">載入中...</div>';
+
+  // 如果還沒載入過房間，顯示「載入中…」
+  if (lastRoomIds.length === 0) {
+    roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">載入中...</div>';
+  }
 
   try {
     const res = await gameAPI.listRooms();
     const rooms = Object.values(res?.data || {});
-    roomList.innerHTML = '';
-    if (rooms.length === 0) return roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">目前沒有房間</div>';
+    const newRoomIds = rooms.map(r => r.id);
 
+    // 如果房間列表沒變，就不要更新 DOM
+    if (JSON.stringify(lastRoomIds) === JSON.stringify(newRoomIds)) return;
+
+    lastRoomIds = newRoomIds;
+
+    // 清空舊列表
+    roomList.innerHTML = '';
+
+    if (rooms.length === 0) {
+      roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">目前沒有房間</div>';
+      return;
+    }
+
+    // 建立新的房間列表
     rooms.forEach(room => {
       const div = document.createElement('div');
       div.className = 'room-item';
@@ -148,6 +167,7 @@ async function refreshRoomList() {
     roomList.innerHTML = '<div style="text-align:center;color:red;padding:20px;">刷新房間列表失敗</div>';
   }
 }
+
 
 function enterGame(roomId, playerId) {
   localStorage.setItem(CONFIG.STORAGE_KEYS.roomId, roomId);
