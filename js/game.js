@@ -13,16 +13,46 @@ let myRole = null;
 let pollTimer = null;
 
 // ================= 初始化 =================
-document.addEventListener('DOMContentLoaded', function () {
+// ================= 初始化 =================
+document.addEventListener('DOMContentLoaded', async function () {
   const playId = localStorage.getItem(CONFIG.STORAGE_KEYS.playId);
   const playerName = localStorage.getItem(CONFIG.STORAGE_KEYS.playerName);
-  const roomId = localStorage.getItem(CONFIG.STORAGE_KEYS.roomId);
-  const playerId = localStorage.getItem(CONFIG.STORAGE_KEYS.playerId);
+  let roomId = localStorage.getItem(CONFIG.STORAGE_KEYS.roomId);
+  let playerId = localStorage.getItem(CONFIG.STORAGE_KEYS.playerId);
 
   if (!playId) {
     window.location.href = 'login.html';
     return;
   }
+
+  document.getElementById('playerName').textContent = playerName || '玩家';
+  
+  // 嘗試自動回房
+  if (roomId && playerId) {
+    try {
+      const res = await gameAPI.getRoomState(roomId, playerId);
+      if (!res.error) {
+        rejoinRoom(roomId, playerId);
+        return; // 成功回房就結束初始化
+      } else {
+        console.warn('自動回房失敗，清除 localStorage:', res.error);
+        localStorage.removeItem('roomId');
+        localStorage.removeItem('playerId');
+        roomId = null;
+        playerId = null;
+      }
+    } catch (e) {
+      console.warn('自動回房失敗，清除 localStorage:', e.message);
+      localStorage.removeItem('roomId');
+      localStorage.removeItem('playerId');
+      roomId = null;
+      playerId = null;
+    }
+  }
+
+  refreshRoomList();
+  setInterval(refreshRoomList, 5000);
+});
 
   // 玩家資訊 Modal
   const playerInfoBtn = document.getElementById('playerInfoBtn');
@@ -140,24 +170,16 @@ async function joinRoom() {
 
 // ================= 房間列表刷新 =================
 async function refreshRoomList() {
+  const roomList = document.getElementById('roomList');
+  roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">載入中...</div>';
+
   try {
-    // 取到後端返回的 data
     const res = await gameAPI.listRooms();
-    console.log('RAW listRooms:', res);
+    const rooms = Array.isArray(res?.data) ? res.data : [];
 
-    // 先判斷是否有 data
-    const rooms = res?.data || [];
-    if (!Array.isArray(rooms)) {
-      console.error('listRooms 回傳不是陣列:', rooms);
-      throw new Error('listRooms 回傳格式錯誤');
-    }
-
-    const roomList = document.getElementById('roomList');
     roomList.innerHTML = '';
-
     if (rooms.length === 0) {
-      roomList.innerHTML =
-        '<div style="text-align:center;color:#999;padding:20px;">目前沒有房間</div>';
+      roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">目前沒有房間</div>';
       return;
     }
 
@@ -181,12 +203,9 @@ async function refreshRoomList() {
 
   } catch (err) {
     console.error('刷新房間列表失敗:', err);
-    document.getElementById('roomList').innerHTML =
-      '<div style="text-align:center;color:red;padding:20px;">刷新房間列表失敗</div>';
+    roomList.innerHTML = '<div style="text-align:center;color:red;padding:20px;">刷新房間列表失敗</div>';
   }
 }
-
-
 
 function enterGame(roomId, playerId) {
   localStorage.setItem(CONFIG.STORAGE_KEYS.roomId, roomId);
@@ -400,9 +419,8 @@ window.rejoinRoom = async function (roomId, playerId) {
 
   try {
     const res = await gameAPI.getRoomState(roomId, playerId);
-    if (res?.error) throw new Error(res.error);
+    if (res.error) throw new Error(res.error);
 
-    // 房間存在，才更新狀態
     state.roomId = roomId;
     state.playerId = playerId;
     state.myVote = null;
@@ -416,10 +434,11 @@ window.rejoinRoom = async function (roomId, playerId) {
 
     await pollRoom();
   } catch (e) {
-    console.warn('自動回房失敗，清除 localStorage:', e.message);
+    console.warn('回房失敗，清除 localStorage:', e.message);
     localStorage.removeItem('roomId');
     localStorage.removeItem('playerId');
-    location.reload(); // 回到大廳或 login
+    location.reload(); // 回到大廳
   }
 };
+
 
