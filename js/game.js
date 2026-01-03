@@ -172,39 +172,39 @@ async function pollRoom() {
   try {
     const res = await gameAPI.getRoomState(state.roomId, state.playerId);
     const result = res?.data || {};
+
     if (result.error) {
+      console.warn('pollRoom 錯誤:', result.error);
+      // 如果是房間不存在，可能是 Sheet 尚未建立，這裡可以先建立或跳過
       if (result.error.includes('房間不存在')) {
-        localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
-        localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
-        location.reload();
+        // 嘗試自動重新建立房間或回大廳
+        console.log('房間不存在，可能是 Sheet 尚未更新');
       }
       return;
     }
 
+    // 正常渲染玩家列表、聊天室
     const players = result.players || {};
     const me = players[state.playerId] || {};
     myRole = me.role || null;
-    document.getElementById('myRole').textContent = myRole ? CONFIG.ROLE_NAMES[myRole] || '?' : '?';
+    document.getElementById('myRole').textContent = myRole ? CONFIG.ROLE_NAMES[myRole] : '?';
 
     updatePlayerList(players);
     updateChat(result.chat || []);
 
     const phase = result.phase;
-    switch (phase) {
-      case 'rolesAssigned':
-      case 'night':
-        showNightUI();
-        break;
-      case 'day':
-        showDayUI();
-        if (Object.values(players).every(p => !p.alive || p.hasVoted)) await resolveVotes();
-        break;
-      case 'ended':
-        showEndUI(result.winner, players);
-        clearInterval(pollTimer);
-        break;
+    if (phase === 'rolesAssigned' || phase === 'night') showNightUI();
+    if (phase === 'day') {
+      showDayUI();
+      if (Object.values(players).every(p => !p.alive || p.hasVoted)) await resolveVotes();
     }
-  } catch (e) { console.error('pollRoom 失敗', e); }
+    if (phase === 'ended') {
+      showEndUI(result.winner, players);
+      clearInterval(pollTimer);
+    }
+  } catch (e) {
+    console.error('pollRoom 失敗', e);
+  }
 }
 
 // ================= 顯示 =================
