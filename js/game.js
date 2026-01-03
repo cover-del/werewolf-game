@@ -140,12 +140,13 @@ async function joinRoom() {
 
 async function refreshRoomList() {
   try {
-    const rooms = await gameAPI.listRooms();
-    console.log('RAW listRooms:', rooms);
+    const res = await gameAPI.listRooms();
+    console.log('RAW listRooms:', res);
 
-    // ✅ 正確判斷：listRooms 就是陣列
+    const rooms = res.data || [];
+
     if (!Array.isArray(rooms)) {
-      console.error('listRooms 回傳不是陣列:', rooms);
+      console.error('listRooms data 不是陣列:', rooms);
       throw new Error('listRooms 回傳格式錯誤');
     }
 
@@ -182,6 +183,7 @@ async function refreshRoomList() {
       '<div style="text-align:center;color:red;padding:20px;">刷新房間列表失敗</div>';
   }
 }
+
 
 function enterGame(roomId, playerId) {
   localStorage.setItem(CONFIG.STORAGE_KEYS.roomId, roomId);
