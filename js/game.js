@@ -19,49 +19,62 @@ document.addEventListener('DOMContentLoaded', async function () {
   let playerId = localStorage.getItem(CONFIG.STORAGE_KEYS.playerId);
 
   if (!playId) {
-    window.location.href = 'login.html'; // ✅ 直接跳轉，不用 return
+    window.location.href = 'login.html';
+    return;
   }
-
 
   document.getElementById('playerName').textContent = playerName || '玩家';
 
-  // 嘗試自動回房
+  // 自動回房
   if (roomId && playerId) {
     try {
       const res = await gameAPI.getRoomState(roomId, playerId);
       if (!res.error) {
         await rejoinRoom(roomId, playerId);
-        return; // 成功回房就結束初始化
       } else {
-        console.warn('自動回房失敗，清除 localStorage:', res.error);
         localStorage.removeItem('roomId');
         localStorage.removeItem('playerId');
-        roomId = null;
-        playerId = null;
       }
-    } catch (e) {
-      console.warn('自動回房失敗，清除 localStorage:', e.message);
+    } catch {
       localStorage.removeItem('roomId');
       localStorage.removeItem('playerId');
-      roomId = null;
-      playerId = null;
     }
   }
 
   refreshRoomList();
   setInterval(refreshRoomList, 5000);
 
-  document.addEventListener('DOMContentLoaded', function () {
-    const logoutBtn = document.querySelector('button.btn-danger'); // 或加個 id
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', window.logout);
+  // -------------------- 綁定事件 --------------------
+  document.getElementById('logoutBtn')?.addEventListener('click', logout);
+  document.getElementById('createRoomBtn')?.addEventListener('click', createRoom);
+  document.getElementById('joinRoomBtn')?.addEventListener('click', joinRoom);
+  document.getElementById('refreshRoomListBtn')?.addEventListener('click', refreshRoomList);
+  document.getElementById('leaveRoomBtn')?.addEventListener('click', leaveRoom);
+  document.getElementById('sendChatBtn')?.addEventListener('click', sendChat);
+  document.getElementById('submitVoteBtn')?.addEventListener('click', submitMyVote);
+  document.getElementById('playerInfoBtn')?.addEventListener('click', async function () {
+    const modal = document.getElementById('playerInfoModal');
+    const content = document.getElementById('playerInfoContent');
+    content.textContent = '載入中...';
+    try {
+      const res = await gameAPI.getPlayerStats(playId);
+      const data = res?.data || res || {};
+      content.innerHTML = `
+        <p><strong>Play ID:</strong> ${data.playId || '-'}</p>
+        <p><strong>名字:</strong> ${data.name || '-'}</p>
+        <p><strong>勝場:</strong> ${data.wins || 0}</p>
+        <p><strong>敗場:</strong> ${data.losses || 0}</p>
+        <p><strong>勝率:</strong> ${data.winRate || 0}%</p>
+      `;
+    } catch {
+      content.textContent = '載入玩家資訊失敗';
     }
+    modal.style.display = 'flex';
   });
+  document.getElementById('closePlayerInfoBtn')?.addEventListener('click', closePlayerInfo);
+  document.getElementById('lobbyChangeAvatarBtn')?.addEventListener('click', changeMyAvatar);
+});
 
-  document.addEventListener('DOMContentLoaded', function () {
-    const createBtn = document.getElementById('createRoomBtn');
-    if (createBtn) createBtn.addEventListener('click', createRoom);
-  });
 
   // 玩家資訊 Modal
   const playerInfoBtn = document.getElementById('playerInfoBtn');
