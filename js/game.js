@@ -138,15 +138,17 @@ async function joinRoom() {
   }
 }
 
+// ================= 房間列表刷新 =================
 async function refreshRoomList() {
   try {
+    // 取到後端返回的 data
     const res = await gameAPI.listRooms();
     console.log('RAW listRooms:', res);
 
-    const rooms = res.data || [];
-
+    // 先判斷是否有 data
+    const rooms = res?.data || [];
     if (!Array.isArray(rooms)) {
-      console.error('listRooms data 不是陣列:', rooms);
+      console.error('listRooms 回傳不是陣列:', rooms);
       throw new Error('listRooms 回傳格式錯誤');
     }
 
@@ -185,6 +187,7 @@ async function refreshRoomList() {
 }
 
 
+
 function enterGame(roomId, playerId) {
   localStorage.setItem(CONFIG.STORAGE_KEYS.roomId, roomId);
   localStorage.setItem(CONFIG.STORAGE_KEYS.playerId, playerId);
@@ -208,16 +211,19 @@ async function pollRoom() {
 
   try {
     const res = await gameAPI.getRoomState(state.roomId, state.playerId);
-    const result = res.data || res;
-    if (result.error) return;
+    const result = res?.data || {};
+    if (result.error) {
+      console.error('pollRoom 錯誤:', result.error);
+      return;
+    }
 
     const players = result.players || {};
     const me = players[state.playerId] || null;
 
     // 更新角色
-    myRole = me && me.role ? me.role : null;
+    myRole = me?.role || null;
     document.getElementById('myRole').textContent =
-      myRole && CONFIG.ROLE_NAMES[myRole] ? CONFIG.ROLE_NAMES[myRole] : '?';
+      myRole ? CONFIG.ROLE_NAMES[myRole] || '?' : '?';
 
     // 更新玩家列表
     updatePlayerList(players);
@@ -225,25 +231,21 @@ async function pollRoom() {
     // 更新聊天室
     updateChat(result.chat || []);
 
-    // 根據 phase 自動流程
+    // 自動流程
     const phase = result.phase;
     switch (phase) {
       case 'rolesAssigned':
-        if (me.isHost) await resolveNight();
+        if (me?.isHost) await resolveNight();
         showNightUI();
         break;
-
       case 'night':
         showNightUI();
         break;
-
       case 'day':
         showDayUI();
-        // 自動結算投票
         const allVoted = Object.values(players).every(p => !p.alive || p.hasVoted);
         if (allVoted) await resolveVotes();
         break;
-
       case 'ended':
         showEndUI(result.winner, players);
         clearInterval(pollTimer);
@@ -253,7 +255,6 @@ async function pollRoom() {
     console.error('pollRoom 失敗', e);
   }
 }
-
 // ================= 顯示函式 =================
 function updatePlayerList(players) {
   const playerList = document.getElementById('playerList');
