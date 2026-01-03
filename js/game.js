@@ -398,16 +398,28 @@ window.logout = function () {
 window.rejoinRoom = async function (roomId, playerId) {
   console.log('🔁 rejoinRoom', roomId, playerId);
 
-  state.roomId = roomId;
-  state.playerId = playerId;
-  state.myVote = null;
+  try {
+    const res = await gameAPI.getRoomState(roomId, playerId);
+    if (res?.error) throw new Error(res.error);
 
-  document.getElementById('lobbyArea')?.classList.add('hidden');
-  document.getElementById('gameArea')?.classList.add('active');
-  document.getElementById('roomId').textContent = roomId;
+    // 房間存在，才更新狀態
+    state.roomId = roomId;
+    state.playerId = playerId;
+    state.myVote = null;
 
-  clearInterval(pollTimer);
-  pollTimer = setInterval(pollRoom, CONFIG.POLL_INTERVAL_MS);
+    document.getElementById('lobbyArea')?.classList.add('hidden');
+    document.getElementById('gameArea')?.classList.add('active');
+    document.getElementById('roomId').textContent = roomId;
 
-  await pollRoom();
+    clearInterval(pollTimer);
+    pollTimer = setInterval(pollRoom, CONFIG.POLL_INTERVAL_MS);
+
+    await pollRoom();
+  } catch (e) {
+    console.warn('自動回房失敗，清除 localStorage:', e.message);
+    localStorage.removeItem('roomId');
+    localStorage.removeItem('playerId');
+    location.reload(); // 回到大廳或 login
+  }
 };
+
