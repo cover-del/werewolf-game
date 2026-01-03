@@ -1,5 +1,5 @@
 /**
- * 狼人殺遊戲 - 主遊戲邏輯（修正版 ES2018 Safe）
+ * 狼人殺遊戲 - 主遊戲邏輯（整理版 ES2018 Safe）
  */
 
 let state = {
@@ -18,14 +18,11 @@ document.addEventListener('DOMContentLoaded', async function () {
   let roomId = localStorage.getItem(CONFIG.STORAGE_KEYS.roomId);
   let playerId = localStorage.getItem(CONFIG.STORAGE_KEYS.playerId);
 
-  if (!playId) {
-    window.location.href = 'login.html';
-    return;
-  }
+  if (!playId) return window.location.href = 'login.html';
 
   document.getElementById('playerName').textContent = playerName || '玩家';
 
-  // 自動回房
+  // 嘗試自動回房
   if (roomId && playerId) {
     try {
       const res = await gameAPI.getRoomState(roomId, playerId);
@@ -52,6 +49,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById('leaveRoomBtn')?.addEventListener('click', leaveRoom);
   document.getElementById('sendChatBtn')?.addEventListener('click', sendChat);
   document.getElementById('submitVoteBtn')?.addEventListener('click', submitMyVote);
+
   document.getElementById('playerInfoBtn')?.addEventListener('click', async function () {
     const modal = document.getElementById('playerInfoModal');
     const content = document.getElementById('playerInfoContent');
@@ -71,45 +69,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
     modal.style.display = 'flex';
   });
+
   document.getElementById('closePlayerInfoBtn')?.addEventListener('click', closePlayerInfo);
   document.getElementById('lobbyChangeAvatarBtn')?.addEventListener('click', changeMyAvatar);
-});
-
-
-  // 玩家資訊 Modal
-  const playerInfoBtn = document.getElementById('playerInfoBtn');
-  if (playerInfoBtn) {
-    playerInfoBtn.addEventListener('click', async function () {
-      const modal = document.getElementById('playerInfoModal');
-      const content = document.getElementById('playerInfoContent');
-      content.textContent = '載入中...';
-
-      try {
-        const res = await gameAPI.getPlayerStats(playId);
-        const data = res?.data || res || {};
-
-        content.innerHTML =
-          '<p><strong>Play ID:</strong> ' + (data.playId || '-') + '</p>' +
-          '<p><strong>名字:</strong> ' + (data.name || '-') + '</p>' +
-          '<p><strong>勝場:</strong> ' + (data.wins || 0) + '</p>' +
-          '<p><strong>敗場:</strong> ' + (data.losses || 0) + '</p>' +
-          '<p><strong>勝率:</strong> ' + (data.winRate || 0) + '%</p>';
-      } catch (e) {
-        content.textContent = '載入玩家資訊失敗';
-        console.error(e);
-      }
-
-      modal.style.display = 'flex';
-    });
-  }
-
-  // 更換頭像
-  const lobbyAvatarBtn = document.getElementById('lobbyChangeAvatarBtn');
-  if (lobbyAvatarBtn) {
-    lobbyAvatarBtn.addEventListener('click', function () {
-      changeMyAvatar();
-    });
-  }
 });
 
 // ================= 共用函式 =================
@@ -128,27 +90,19 @@ window.addEventListener('beforeunload', function () {
   }
 });
 
-// ================= 房間 =================
+// ================= 房間相關 =================
 async function createRoom() {
   const customRoomId = document.getElementById('customRoomId').value.trim();
   const errorDiv = document.getElementById('createError');
   errorDiv.textContent = '';
 
   try {
-    const res = await gameAPI.createRoom(
-      localStorage.getItem(CONFIG.STORAGE_KEYS.playId),
-      '',
-      customRoomId || undefined
-    );
+    const res = await gameAPI.createRoom(localStorage.getItem(CONFIG.STORAGE_KEYS.playId), '', customRoomId || undefined);
     const result = res?.data || res;
-    if (result.error) {
-      errorDiv.textContent = result.error;
-    } else {
-      enterGame(result.roomId, result.playerId);
-    }
-  } catch (e) {
+    if (result.error) errorDiv.textContent = result.error;
+    else enterGame(result.roomId, result.playerId);
+  } catch {
     errorDiv.textContent = '建立房間失敗';
-    console.error(e);
   }
 }
 
@@ -156,45 +110,27 @@ async function joinRoom() {
   const roomId = document.getElementById('joinRoomId').value.trim().toUpperCase();
   const errorDiv = document.getElementById('joinError');
   errorDiv.textContent = '';
-
-  if (!roomId) {
-    errorDiv.textContent = '請輸入房號';
-    return;
-  }
+  if (!roomId) return errorDiv.textContent = '請輸入房號';
 
   try {
-    const res = await gameAPI.joinRoom(
-      roomId,
-      localStorage.getItem(CONFIG.STORAGE_KEYS.playId),
-      ''
-    );
+    const res = await gameAPI.joinRoom(roomId, localStorage.getItem(CONFIG.STORAGE_KEYS.playId), '');
     const result = res?.data || res;
-    if (result.error) {
-      errorDiv.textContent = result.error;
-    } else {
-      enterGame(roomId, result.playerId);
-    }
-  } catch (e) {
+    if (result.error) errorDiv.textContent = result.error;
+    else enterGame(roomId, result.playerId);
+  } catch {
     errorDiv.textContent = '加入房間失敗';
-    console.error(e);
   }
 }
 
-// ================= 房間列表刷新 =================
 async function refreshRoomList() {
   const roomList = document.getElementById('roomList');
   roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">載入中...</div>';
 
   try {
     const res = await gameAPI.listRooms();
-    const roomsObj = res?.data || {};
-    const rooms = Object.values(roomsObj);
-
+    const rooms = Object.values(res?.data || {});
     roomList.innerHTML = '';
-    if (rooms.length === 0) {
-      roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">目前沒有房間</div>';
-      return;
-    }
+    if (rooms.length === 0) return roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">目前沒有房間</div>';
 
     rooms.forEach(room => {
       const div = document.createElement('div');
@@ -202,19 +138,13 @@ async function refreshRoomList() {
       div.innerHTML = `
         <div class="room-info">
           <div class="room-id">房號: ${room.id}</div>
-          <div class="room-detail">
-            房主: ${room.hostName || '-'} | 玩家: ${Object.keys(room.players || {}).length}
-          </div>
+          <div class="room-detail">房主: ${room.hostName || '-'} | 玩家: ${Object.keys(room.players || {}).length}</div>
         </div>
-        <button class="room-join-btn"
-          onclick="document.getElementById('joinRoomId').value='${room.id}'; joinRoom();">
-          加入
-        </button>
+        <button class="room-join-btn" onclick="document.getElementById('joinRoomId').value='${room.id}'; joinRoom();">加入</button>
       `;
       roomList.appendChild(div);
     });
-  } catch (err) {
-    console.error('刷新房間列表失敗:', err);
+  } catch {
     roomList.innerHTML = '<div style="text-align:center;color:red;padding:20px;">刷新房間列表失敗</div>';
   }
 }
@@ -222,7 +152,6 @@ async function refreshRoomList() {
 function enterGame(roomId, playerId) {
   localStorage.setItem(CONFIG.STORAGE_KEYS.roomId, roomId);
   localStorage.setItem(CONFIG.STORAGE_KEYS.playerId, playerId);
-
   state.roomId = roomId;
   state.playerId = playerId;
   state.myVote = null;
@@ -231,11 +160,10 @@ function enterGame(roomId, playerId) {
   document.getElementById('gameArea')?.classList.add('active');
   document.getElementById('roomId').textContent = roomId;
 
-  pollRoom();
   clearInterval(pollTimer);
+  pollRoom();
   pollTimer = setInterval(pollRoom, CONFIG.POLL_INTERVAL_MS);
 }
-
 
 // ================= 核心輪詢 =================
 async function pollRoom() {
@@ -244,9 +172,7 @@ async function pollRoom() {
   try {
     const res = await gameAPI.getRoomState(state.roomId, state.playerId);
     const result = res?.data || {};
-
     if (result.error) {
-      console.warn('pollRoom 錯誤:', result.error);
       if (result.error.includes('房間不存在')) {
         localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
         localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
@@ -256,9 +182,8 @@ async function pollRoom() {
     }
 
     const players = result.players || {};
-    const me = players[state.playerId] || null;
-
-    myRole = me?.role || null;
+    const me = players[state.playerId] || {};
+    myRole = me.role || null;
     document.getElementById('myRole').textContent = myRole ? CONFIG.ROLE_NAMES[myRole] || '?' : '?';
 
     updatePlayerList(players);
@@ -272,45 +197,32 @@ async function pollRoom() {
         break;
       case 'day':
         showDayUI();
-        const allVoted = Object.values(players).every(p => !p.alive || p.hasVoted);
-        if (allVoted) await resolveVotes();
+        if (Object.values(players).every(p => !p.alive || p.hasVoted)) await resolveVotes();
         break;
       case 'ended':
         showEndUI(result.winner, players);
         clearInterval(pollTimer);
         break;
     }
-  } catch (e) {
-    console.error('pollRoom 失敗', e);
-  }
+  } catch (e) { console.error('pollRoom 失敗', e); }
 }
 
 // ================= 顯示 =================
 function updatePlayerList(players) {
   const playerList = document.getElementById('playerList');
   playerList.innerHTML = '';
-
-  const roleImages = {
-    werewolf: 'img/roles/werewolf.png',
-    seer: 'img/roles/seer.png',
-    doctor: 'img/roles/doctor.png',
-    villager: 'img/roles/villager.png'
-  };
-
+  const roleImages = { werewolf:'img/roles/werewolf.png', seer:'img/roles/seer.png', doctor:'img/roles/doctor.png', villager:'img/roles/villager.png' };
   Object.values(players).forEach(p => {
-    let roleIconHTML = '';
-    if (p.id === state.playerId && p.role && roleImages[p.role]) {
-      roleIconHTML = '<img src="' + roleImages[p.role] + '" class="role-icon" style="width:24px;height:24px;">';
-    }
+    const roleIcon = (p.id === state.playerId && p.role && roleImages[p.role]) ? `<img src="${roleImages[p.role]}" class="role-icon" style="width:24px;height:24px;">` : '';
     const div = document.createElement('div');
     div.className = 'player-card';
-    div.innerHTML =
-      '<img src="' + (p.avatar || 'https://via.placeholder.com/50') + '" class="player-avatar">' +
-      '<div class="player-info-wrapper" style="display:flex;gap:8px;">' +
-      '<div>' + p.name + '</div>' +
-      roleIconHTML +
-      '</div>' +
-      '<div>' + (p.alive ? '🟢 存活' : '⚫ 死亡') + '</div>';
+    div.innerHTML = `
+      <img src="${p.avatar || 'https://via.placeholder.com/50'}" class="player-avatar">
+      <div class="player-info-wrapper" style="display:flex;gap:8px;">
+        <div>${p.name}</div>${roleIcon}
+      </div>
+      <div>${p.alive ? '🟢 存活' : '⚫ 死亡'}</div>
+    `;
     playerList.appendChild(div);
   });
 }
@@ -342,29 +254,13 @@ function showEndUI(winner, players) {
 }
 
 // ================= 夜晚 / 投票 / 角色 =================
-async function submitNightAction(type, targetId) {
-  await gameAPI.submitNightAction(state.roomId, state.playerId, { type, targetId });
-}
-async function submitMyVote() {
-  if (!state.myVote) return alert('請選擇投票對象');
-  await gameAPI.submitVote(state.roomId, state.playerId, state.myVote);
-}
+async function submitNightAction(type, targetId) { await gameAPI.submitNightAction(state.roomId, state.playerId, { type, targetId }); }
+async function submitMyVote() { if (!state.myVote) return alert('請選擇投票對象'); await gameAPI.submitVote(state.roomId, state.playerId, state.myVote); }
 async function assignRoles() { await gameAPI.assignRoles(state.roomId, state.playerId); }
 async function resolveNight() { try { await gameAPI.resolveNight(state.roomId, state.playerId); } catch(e){} }
 async function resolveVotes() { try { await gameAPI.resolveVotes(state.roomId, state.playerId); } catch(e){} }
-async function sendChat() {
-  const input = document.getElementById('chatInput');
-  if (!input.value.trim()) return;
-  await gameAPI.postChat(state.roomId, state.playerId, input.value.trim());
-  input.value = '';
-}
-async function leaveRoom() {
-  await gameAPI.leaveRoom(state.roomId, state.playerId);
-  localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
-  localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
-  clearInterval(pollTimer);
-  location.reload();
-}
+async function sendChat() { const input=document.getElementById('chatInput'); if (!input.value.trim()) return; await gameAPI.postChat(state.roomId, state.playerId, input.value.trim()); input.value=''; }
+async function leaveRoom() { await gameAPI.leaveRoom(state.roomId, state.playerId); localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId); localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId); clearInterval(pollTimer); location.reload(); }
 
 // ================= 頭像 =================
 function changeMyAvatar() {
@@ -390,11 +286,9 @@ window.logout = function () {
   localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
   localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
   localStorage.removeItem(CONFIG.STORAGE_KEYS.playerName);
-
   state.roomId = null;
   state.playerId = null;
   state.phase = null;
-
   window.location.replace(location.origin + '/werewolf-game/login.html');
 };
 
@@ -416,11 +310,9 @@ window.rejoinRoom = async function (roomId, playerId) {
     pollTimer = setInterval(pollRoom, CONFIG.POLL_INTERVAL_MS);
 
     await pollRoom();
-  } catch (e) {
-    console.warn('回房失敗，清除 localStorage:', e.message);
-    localStorage.removeItem('roomId');
-    localStorage.removeItem('playerId');
+  } catch {
+    localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
+    localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
     location.reload();
   }
 };
-
