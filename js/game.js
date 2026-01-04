@@ -10,6 +10,7 @@ let state = {
 };
 let myRole = null;
 let pollTimer = null;
+let inGame = false;
 
 // ================= 初始化 =================
 // ================= 初始化 =================
@@ -23,28 +24,30 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   document.getElementById('playerName').textContent = playerName || '玩家';
 
-  // ===== 嘗試自動回房 =====
+ let rejoined = false;
+
+  // 嘗試自動回房
   if (roomId && playerId) {
     try {
       const res = await gameAPI.getRoomState(roomId, playerId);
       const result = res?.data || res;
       if (result && result.id) {
-        // 房間存在，自動回房
         await rejoinRoom(roomId, playerId);
+        rejoined = true;
       } else {
-        // 房間不存在
-        localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
-        localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
+        localStorage.removeItem(...)
       }
     } catch {
-      localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
-      localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
+      localStorage.removeItem(...)
     }
   }
+  
+  // ⚠️ 如果已回房，不要啟動大廳邏輯
+  if (!rejoined) {
+    refreshRoomList();
+    setInterval(refreshRoomList, 5000);
+  }
 
-  // ===== 定時刷新房間列表 =====
-  refreshRoomList();
-  setInterval(refreshRoomList, 5000);
   // -------------------- 綁定事件 --------------------
   document.getElementById('logoutBtn')?.addEventListener('click', logout);
   document.getElementById('createRoomBtn')?.addEventListener('click', createRoom);
@@ -171,6 +174,7 @@ async function refreshRoomList() {
 
 
 function enterGame(roomId, playerId) {
+  inGame = true;
   localStorage.setItem(CONFIG.STORAGE_KEYS.roomId, roomId);
   localStorage.setItem(CONFIG.STORAGE_KEYS.playerId, playerId);
   state.roomId = roomId;
@@ -195,10 +199,7 @@ async function pollRoom() {
     const result = res?.data || {};
 
     if (!result.id) {
-      console.warn('房間不存在');
-      localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
-      localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
-      location.reload();
+      console.warn('房間狀態尚未就緒，略過本次 poll');
       return;
     }
 
@@ -320,6 +321,7 @@ window.rejoinRoom = async function (roomId, playerId) {
     // 設定 state
     state.roomId = roomId;
     state.playerId = playerId;
+    inGame = true;
     state.myVote = null;
 
     // 顯示遊戲介面
