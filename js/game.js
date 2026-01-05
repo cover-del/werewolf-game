@@ -192,24 +192,20 @@ function enterGame(roomId, playerId) {
 
 // ================= 核心輪詢 =================
 async function pollRoom() {
-  if (!inRoom || !state.roomId || !state.playerId) return;
+  if (!state.roomId || !state.playerId) return;
 
   try {
     const res = await gameAPI.getRoomState(state.roomId, state.playerId);
     const result = res?.data || {};
 
+    // 房間不存在或已關閉 → 回大廳
     if (!result.id) {
-      console.warn('房間不存在');
-      // ❌ 不要立刻 reload，先記錄失敗
-      roomFailCount++;
-      if (roomFailCount >= 3) {
-        alert('房間已關閉或不存在，將回大廳');
-        leaveRoom();
-      }
+      console.warn('房間已關閉或不存在，將回大廳');
+      leaveRoomSafe();
       return;
     }
 
-    roomFailCount = 0; // 成功取得房間
+    // 更新玩家資訊
     const players = result.players || {};
     const me = players[state.playerId] || null;
     myRole = me?.role || null;
@@ -218,6 +214,7 @@ async function pollRoom() {
     updatePlayerList(players);
     updateChat(result.chat || []);
 
+    // 更新遊戲階段 UI
     const phase = result.phase;
     if (phase === 'rolesAssigned' || phase === 'night') showNightUI();
     if (phase === 'day') {
@@ -228,10 +225,27 @@ async function pollRoom() {
       showEndUI(result.winner, players);
       clearInterval(pollTimer);
     }
+
   } catch (e) {
     console.error('pollRoom 失敗', e);
+    // 如果只是網路或請求中斷錯誤，不踢回大廳
   }
 }
+
+// 安全離開房間（不會因為輪詢錯誤被回大廳）
+async function leaveRoomSafe() {
+  try {
+    await gameAPI.leaveRoom(state.roomId, state.playerId);
+  } catch {} // 忽略錯誤
+  localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
+  localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
+  clearInterval(pollTimer);
+
+  // 回大廳顯示
+  document.getElementById('lobbyArea')?.classList.remove('hidden');
+  document.getElementById('gameArea')?.classList.remove('active');
+}
+
 
 
 // ================= 顯示 =================
@@ -320,16 +334,20 @@ window.logout = function () {
 };
 
 // ================= 回房 =================
-window.rejoinRoom = async function(roomId, playerId) {
+window.rejoinRoom = async function (roomId, playerId) {
   try {
     const res = await gameAPI.getRoomState(roomId, playerId);
     const result = res?.data || {};
-    if (!result.id) throw new Error('房間不存在');
+
+    if (!result.id) {
+      console.warn('房間已關閉或不存在，回大廳');
+      leaveRoomSafe();
+      return;
+    }
 
     state.roomId = roomId;
     state.playerId = playerId;
     state.myVote = null;
-    inRoom = true;
 
     document.getElementById('lobbyArea')?.classList.add('hidden');
     document.getElementById('gameArea')?.classList.add('active');
@@ -339,11 +357,8 @@ window.rejoinRoom = async function(roomId, playerId) {
     pollTimer = setInterval(pollRoom, CONFIG.POLL_INTERVAL_MS);
     await pollRoom();
   } catch {
-    localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
-    localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
-    inRoom = false;
-    // ❌ 立即 reload 改為只回大廳
-    document.getElementById('lobbyArea')?.classList.remove('hidden');
-    document.getElementById('gameArea')?.classList.remove('active');
+    console.warn('無法回房 → 回大廳');
+    leaveRoomSafe();
   }
 };
+
