@@ -336,20 +336,49 @@ function changeMyAvatar() {
   input.onchange = async function () {
     const file = input.files[0];
     if (!file) return;
+
+    const MAX_SIZE_MB = 5; // 最大檔案 5MB
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      alert(`檔案太大，請選擇小於 ${MAX_SIZE_MB}MB 的圖片`);
+      return;
+    }
+
     const reader = new FileReader();
+
     reader.onload = async function () {
-      const res = await gameAPI.uploadAvatar(reader.result, file.name);
-      if (res?.success) {
-        alert('頭像已更新');
-        // 可直接更新前端顯示：
-        document.querySelector('#myAvatarImg').src = res.url;
-      } else {
-        alert('頭像上傳失敗：' + (res?.error || '未知錯誤'));
+      try {
+        // ⚡ 顯示上傳中提示
+        const uploadMsg = document.createElement('div');
+        uploadMsg.id = 'uploadingAvatarMsg';
+        uploadMsg.textContent = '頭像上傳中...';
+        uploadMsg.style.color = '#007bff';
+        document.body.appendChild(uploadMsg);
+
+        const res = await gameAPI.uploadAvatar(reader.result, file.name);
+
+        // 移除提示
+        document.getElementById('uploadingAvatarMsg')?.remove();
+
+        if (res?.success) {
+          alert('頭像已更新');
+          // 更新前端顯示
+          const avatarImg = document.querySelector('#myAvatarImg');
+          if (avatarImg) avatarImg.src = res.url;
+        } else {
+          alert('頭像上傳失敗：' + (res?.error || '未知錯誤'));
+        }
+      } catch (e) {
+        document.getElementById('uploadingAvatarMsg')?.remove();
+        alert('頭像上傳失敗：' + e.message);
       }
+    };
+
     reader.readAsDataURL(file);
   };
   input.click();
 }
+
+
 
 // ================= 登出 =================
 window.logout = function () {
