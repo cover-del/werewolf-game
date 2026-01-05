@@ -234,14 +234,20 @@ async function pollRoom() {
 
 // 安全離開房間（不會因為輪詢錯誤被回大廳）
 async function leaveRoomSafe() {
-  try {
-    await gameAPI.leaveRoom(state.roomId, state.playerId);
-  } catch {} // 忽略錯誤
+  // 只有房間存在才呼叫 API
+  if (state.roomId && state.playerId) {
+    try {
+      await gameAPI.leaveRoom(state.roomId, state.playerId);
+    } catch (e) {
+      // 房間已不存在時忽略錯誤
+      console.warn('leaveRoomSafe 忽略錯誤:', e.message);
+    }
+  }
+
   localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
   localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
   clearInterval(pollTimer);
 
-  // 回大廳顯示
   document.getElementById('lobbyArea')?.classList.remove('hidden');
   document.getElementById('gameArea')?.classList.remove('active');
 }
