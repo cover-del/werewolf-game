@@ -339,8 +339,13 @@ function changeMyAvatar() {
     const reader = new FileReader();
     reader.onload = async function () {
       const res = await gameAPI.uploadAvatar(reader.result, file.name);
-      if (res.success) alert('頭像已更新');
-    };
+      if (res?.success) {
+        alert('頭像已更新');
+        // 可直接更新前端顯示：
+        document.querySelector('#myAvatarImg').src = res.url;
+      } else {
+        alert('頭像上傳失敗：' + (res?.error || '未知錯誤'));
+      }
     reader.readAsDataURL(file);
   };
   input.click();
