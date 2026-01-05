@@ -333,40 +333,52 @@ function changeMyAvatar() {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/*';
-
+  
   input.onchange = async function () {
     const file = input.files[0];
     if (!file) return;
 
-    // ✅ 檢查檔案大小 (例如限制 5MB)
-    const maxSizeMB = 5;
-    if (file.size / 1024 / 1024 > maxSizeMB) {
-      alert(`檔案過大，請上傳小於 ${maxSizeMB} MB 的圖片`);
-      return;
-    }
-
     const reader = new FileReader();
 
-    // 上傳中提示
-    const uploadingAlert = alert('頭像上傳中，請稍候…');
+    reader.onloadstart = () => {
+      console.log('📤 讀取檔案中...');
+      document.getElementById('uploadStatus').textContent = '讀取檔案中...';
+    };
 
-    reader.onload = async function () {
-      try {
-        const res = await gameAPI.uploadAvatar(reader.result, file.name);
-
-        if (res?.success) {
-          alert('頭像已更新');
-          const avatarImg = document.querySelector('#myAvatarImg');
-          if (avatarImg) avatarImg.src = res.url;
-        } else {
-          alert('頭像上傳失敗：' + (res?.error || '未知錯誤'));
-        }
-      } catch (e) {
-        alert('頭像上傳出現錯誤：' + e.message);
+    reader.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        document.getElementById('uploadStatus').textContent = `讀取檔案 ${percent}%`;
       }
     };
 
-    // ⭐ 在讀取完成後觸發 onload
+    reader.onload = async function () {
+      console.log('📤 準備上傳...');
+      document.getElementById('uploadStatus').textContent = '上傳中...';
+      
+      try {
+        const res = await gameAPI.uploadAvatar(reader.result, file.name);
+        
+        if (res?.success) {
+          alert('✅ 頭像已更新');
+          document.querySelector('#myAvatarImg').src = res.url;
+          document.getElementById('uploadStatus').textContent = '上傳完成';
+        } else {
+          alert('❌ 頭像上傳失敗：' + (res?.error || '未知錯誤'));
+          document.getElementById('uploadStatus').textContent = '上傳失敗';
+        }
+      } catch (e) {
+        console.error('uploadAvatar 錯誤', e);
+        document.getElementById('uploadStatus').textContent = '上傳錯誤';
+        alert('❌ 上傳過程發生錯誤：' + e.message);
+      }
+    };
+
+    reader.onerror = () => {
+      console.error('讀取檔案失敗');
+      document.getElementById('uploadStatus').textContent = '讀取檔案失敗';
+    };
+
     reader.readAsDataURL(file);
   };
 
