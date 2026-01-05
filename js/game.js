@@ -253,6 +253,7 @@ async function leaveRoomSafe() {
   
   document.getElementById('lobbyArea')?.classList.remove('hidden');
   document.getElementById('gameArea')?.classList.remove('active');
+}  // ✅ 這個大括號是你缺少的
 
 
 // ================= 顯示 =================
