@@ -204,16 +204,17 @@ async function pollRoom() {
   if (!state.roomId || !state.playerId) return;
 
   try {
-    const res = await gameAPI.getRoomState(state.roomId, state.playerId);
+    // ✅ 統一大寫
+    const roomId = state.roomId.toUpperCase();
+
+    const res = await gameAPI.getRoomState(roomId, state.playerId);
     const result = res?.data || {};
 
-    // 房間不存在或已關閉 → 回大廳
+    // 房間不存在 → 等 1 秒重試，不立即踢回大廳
     if (!result.id) {
-      console.warn('房間已關閉或不存在，將回大廳');
-      await leaveRoomSafe(); // ⭐ await 確保 API 與清理完成
+      console.warn('房間暫時不存在，稍後重試', roomId);
       return;
     }
-
 
     // 更新玩家資訊
     const players = result.players || {};
@@ -238,9 +239,10 @@ async function pollRoom() {
 
   } catch (e) {
     console.error('pollRoom 失敗', e);
-    // 如果只是網路或請求中斷錯誤，不踢回大廳
+    // 不要直接踢回大廳
   }
 }
+
 
 // 安全離開房間（不會因為輪詢錯誤被回大廳）
 async function leaveRoomSafe() {
