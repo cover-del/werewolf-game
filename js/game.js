@@ -355,11 +355,11 @@ function changeMyAvatar() {
     reader.onload = async function () {
       console.log('📤 準備上傳...');
       document.getElementById('uploadStatus').textContent = '上傳中...';
-      
+
       try {
         const res = await gameAPI.uploadAvatar(reader.result, file.name);
 
-        // fallback 機制：如果沒有 url 或不是字串，使用預設頭像
+        // fallback 機制
         const avatarUrl = res?.success && typeof res.url === 'string' ? res.url : 'https://via.placeholder.com/50';
 
         document.querySelector('#myAvatarImg').src = avatarUrl;
@@ -389,6 +389,7 @@ function changeMyAvatar() {
 
   input.click();
 }
+
 
 
 
