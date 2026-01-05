@@ -103,7 +103,7 @@ async function createRoom() {
     const res = await gameAPI.createRoom(localStorage.getItem(CONFIG.STORAGE_KEYS.playId), '', customRoomId || undefined);
     const result = res?.data || res;
     if (result.error) errorDiv.textContent = result.error;
-    else enterGame(result.roomId, result.playerId);
+    else enterGame(result.roomId.toUpperCase(), result.playerId);
   } catch {
     errorDiv.textContent = '建立房間失敗';
   }
@@ -168,22 +168,25 @@ async function refreshRoomList() {
   }
 }
 
-async function waitRoomExist(roomId, playerId, maxRetries = 15, intervalMs = 300) {
-    let tries = 0;
-    while (tries < maxRetries) {
-        try {
-            const res = await gameAPI.getRoomState(roomId, playerId);
-            if (res?.data?.id) return true; // 房間存在
-        } catch {}
-        tries++;
-        await new Promise(r => setTimeout(r, intervalMs));
-    }
-    return false; // 超過重試仍不存在
+async function waitRoomExist(roomId, playerId, maxRetries = 50, intervalMs = 500) {
+  let tries = 0;
+  while (tries < maxRetries) {
+    try {
+      const res = await gameAPI.getRoomState(roomId, playerId);
+      if (res.id) return true; // 房間生成
+    } catch {}
+    await new Promise(r => setTimeout(r, intervalMs));
+    tries++;
+  }
+  return false; // 仍不存在
 }
 
 
+
 async function enterGame(roomId, playerId) {
+    roomId = roomId.toUpperCase(); // ⭐ 唯一一次統一大寫
     localStorage.setItem(CONFIG.STORAGE_KEYS.roomId, roomId);
+    state.roomId = roomId;
     localStorage.setItem(CONFIG.STORAGE_KEYS.playerId, playerId);
     state.roomId = roomId;
     state.playerId = playerId;
@@ -212,15 +215,11 @@ async function pollRoom() {
   if (!state.roomId || !state.playerId) return;
 
   try {
-    // ✅ 統一大寫
-    const roomId = state.roomId.toUpperCase();
-
-    const res = await gameAPI.getRoomState(roomId, state.playerId);
+    const res = await gameAPI.getRoomState(state.roomId, state.playerId);
     const result = res?.data || {};
 
-    // 房間不存在 → 等 1 秒重試，不立即踢回大廳
     if (!result.id) {
-      console.warn('房間暫時不存在，稍後重試', roomId);
+      console.warn('房間暫時不存在，稍後重試', state.roomId);
       return;
     }
 
