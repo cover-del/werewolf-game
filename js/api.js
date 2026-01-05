@@ -1,11 +1,4 @@
-/**
- * 狼人殺遊戲 - 前端 API 封裝（修正版）
- */
 class GameAPI {
-  /**
-   * @param {string} baseUrl GAS Web App URL 或 Proxy URL
-   * @param {number} timeout 超時時間 (ms)
-   */
   constructor(baseUrl, timeout = 20000) {
     if (!baseUrl) throw new Error('GameAPI 必須傳入 baseUrl');
     this.baseUrl = baseUrl;
@@ -13,10 +6,10 @@ class GameAPI {
   }
 
   async request(action, data = {}) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
+    try {
       const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -28,12 +21,19 @@ class GameAPI {
 
       const json = await response.json();
 
-      // GAS doPost 返回的結構可能是 {success:true,data:...} 或 {success:false,error:...}
       if (json.success === false) throw new Error(json.error || 'Unknown GAS error');
 
       return json.data || json;
 
     } catch (err) {
+      clearTimeout(timeoutId);
+
+      // 將 AbortError 處理掉，不跳 console.error
+      if (err.name === 'AbortError') {
+        console.warn(`[GameAPI] ${action} 請求被中斷`);
+        return { error: '請求被取消' };
+      }
+
       console.error(`[GameAPI] ${action} 請求失敗:`, err);
       return { error: err.message };
     }
@@ -71,16 +71,12 @@ class GameAPI {
 let gameAPI = null;
 
 function initializeAPI() {
-  // 確保 CONFIG.GS_WEB_APP_URL 已設定
   if (!CONFIG.GS_WEB_APP_URL) {
     console.error('❌ CONFIG.GS_WEB_APP_URL 未設定');
     return;
   }
-
-  // 使用 Proxy 或直接 GAS Web App URL
   gameAPI = new GameAPI(CONFIG.GS_WEB_APP_URL, 20000);
   console.log('✅ GameAPI 已初始化');
 }
 
-// 放在 body 底部或 DOMContentLoaded 時呼叫
 document.addEventListener('DOMContentLoaded', initializeAPI);
