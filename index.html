@@ -14,12 +14,13 @@
   <!-- 頁頭 -->
   <div class="header">
     <h1>🐺 線上狼人殺</h1>
-    <div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+        <img id="myAvatarImg" src="https://via.placeholder.com/50" alt="我的頭像" style="width:50px;height:50px;border-radius:50%;">
+        <span class="player-info">玩家: <strong id="playerName"></strong></span>
+        <button class="btn-info" id="playerInfoBtn">我的資訊</button>
+        <button class="btn-danger" id="logoutBtn">登出</button>
+      </div>
       <div id="uploadStatus" style="color:#555;margin-top:5px;">未上傳</div>
-      <span class="player-info">玩家: <strong id="playerName"></strong></span>
-      <button class="btn-info" id="playerInfoBtn">我的資訊</button>
-      <button class="btn-danger" id="logoutBtn">登出</button>
-    </div>
   </div>
 
   <!-- 大廳區域 -->
