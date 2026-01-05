@@ -168,6 +168,19 @@ async function refreshRoomList() {
   }
 }
 
+async function waitRoomExist(roomId, playerId, maxRetries = 15, intervalMs = 300) {
+    let tries = 0;
+    while (tries < maxRetries) {
+        try {
+            const res = await gameAPI.getRoomState(roomId, playerId);
+            if (res?.data?.id) return true; // 房間存在
+        } catch {}
+        tries++;
+        await new Promise(r => setTimeout(r, intervalMs));
+    }
+    return false; // 超過重試仍不存在
+}
+
 
 async function enterGame(roomId, playerId) {
     localStorage.setItem(CONFIG.STORAGE_KEYS.roomId, roomId);
@@ -183,22 +196,17 @@ async function enterGame(roomId, playerId) {
 
     clearInterval(pollTimer);
 
-    // ⭐ 在開始輪詢前，先確認房間確實存在
-    let tries = 0;
-    while (tries < 5) {
-        try {
-            const res = await gameAPI.getRoomState(roomId, playerId);
-            if (res?.data?.id) break; // 房間存在
-        } catch {}
-        tries++;
-        await new Promise(r => setTimeout(r, 200)); // 每 200ms 重試
+    // ⭐ 等房間生成完成
+    const roomExists = await waitRoomExist(roomId, playerId);
+    if (!roomExists) {
+        console.warn('房間尚未生成 → 回大廳');
+        leaveRoomSafe();
+        return;
     }
 
     pollTimer = setInterval(pollRoom, CONFIG.POLL_INTERVAL_MS);
     pollRoom();
 }
-
-
 // ================= 核心輪詢 =================
 async function pollRoom() {
   if (!state.roomId || !state.playerId) return;
@@ -358,31 +366,29 @@ window.logout = function () {
 
 // ================= 回房 =================
 window.rejoinRoom = async function (roomId, playerId) {
-  try {
-    const res = await gameAPI.getRoomState(roomId, playerId);
-    const result = res?.data || {};
+    try {
+        const roomExists = await waitRoomExist(roomId, playerId);
+        if (!roomExists) {
+            console.warn('房間已關閉或不存在，回大廳');
+            leaveRoomSafe();
+            return;
+        }
 
-    if (!result.id) {
-      console.warn('房間已關閉或不存在，回大廳');
-      leaveRoomSafe();
-      return;
+        state.roomId = roomId;
+        state.playerId = playerId;
+        state.myVote = null;
+
+        document.getElementById('lobbyArea')?.classList.add('hidden');
+        document.getElementById('gameArea')?.classList.add('active');
+        document.getElementById('roomId').textContent = roomId;
+
+        clearInterval(pollTimer);
+        pollTimer = setInterval(pollRoom, CONFIG.POLL_INTERVAL_MS);
+        await pollRoom();
+    } catch {
+        console.warn('無法回房 → 回大廳');
+        leaveRoomSafe();
     }
-
-    state.roomId = roomId;
-    state.playerId = playerId;
-    state.myVote = null;
-
-    document.getElementById('lobbyArea')?.classList.add('hidden');
-    document.getElementById('gameArea')?.classList.add('active');
-    document.getElementById('roomId').textContent = roomId;
-
-    clearInterval(pollTimer);
-    pollTimer = setInterval(pollRoom, CONFIG.POLL_INTERVAL_MS);
-    await pollRoom();
-  } catch {
-    console.warn('無法回房 → 回大廳');
-    leaveRoomSafe();
-  }
 };
 
 console.log('game.js end');
