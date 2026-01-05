@@ -86,19 +86,15 @@ function closePlayerInfo() {
 }
 
 window.addEventListener('beforeunload', function () {
-  const roomId = localStorage.getItem(CONFIG.STORAGE_KEYS.roomId);
-  const playerId = localStorage.getItem(CONFIG.STORAGE_KEYS.playerId);
-  if (roomId && playerId && gameAPI) {
-    navigator.sendBeacon(
-      gameAPI.baseUrl,
-      JSON.stringify({ action: 'leaveRoom', roomId, playerId })
-    );
+  if (state.roomId && state.playerId) {
+    leaveRoomSafe(); // ⭐ 統一用 leaveRoomSafe 處理，安全清理
   }
 });
 
+
 // ================= 房間相關 =================
 async function createRoom() {
-  const customRoomId = document.getElementById('customRoomId').value.trim();
+  const customRoomId = document.getElementById('customRoomId').value.trim().toUpperCase();
   const errorDiv = document.getElementById('createError');
   errorDiv.textContent = '';
 
@@ -201,9 +197,10 @@ async function pollRoom() {
     // 房間不存在或已關閉 → 回大廳
     if (!result.id) {
       console.warn('房間已關閉或不存在，將回大廳');
-      leaveRoomSafe();
+      await leaveRoomSafe(); // ⭐ await 確保 API 與清理完成
       return;
     }
+
 
     // 更新玩家資訊
     const players = result.players || {};
@@ -244,14 +241,18 @@ async function leaveRoomSafe() {
     }
   }
 
+  pollTimer && clearInterval(pollTimer);
+  pollTimer = null;
+  inRoom = false;
+  state.roomId = null;
+  state.playerId = null;
+  state.myVote = null;
+  
   localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
   localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
-  clearInterval(pollTimer);
-
+  
   document.getElementById('lobbyArea')?.classList.remove('hidden');
   document.getElementById('gameArea')?.classList.remove('active');
-}
-
 
 
 // ================= 顯示 =================
