@@ -168,19 +168,15 @@ async function refreshRoomList() {
   }
 }
 
-async function waitRoomExist(roomId, playerId, maxRetries = 50, intervalMs = 500) {
-  let tries = 0;
-  while (tries < maxRetries) {
-    try {
-      const res = await gameAPI.getRoomState(roomId, playerId);
-      if (res.id) return true; // 房間生成
-    } catch {}
-    await new Promise(r => setTimeout(r, intervalMs));
-    tries++;
-  }
-  return false; // 仍不存在
-}
+async function waitRoomExist(roomId, playerId) {
+  try {
+    const res = await gameAPI.getRoomState(roomId, playerId);
+    const result = res?.data || res; // ✅ 同一件事
 
+    if (result?.id) return true;
+  } catch {}
+  return false;
+}
 
 
 async function enterGame(roomId, playerId) {
@@ -216,14 +212,13 @@ async function pollRoom() {
 
   try {
     const res = await gameAPI.getRoomState(state.roomId, state.playerId);
-    const result = res?.data || {};
+    const result = res?.data || res; // ✅ 就是你問的這行
 
-    if (!result.id) {
+    if (!result || !result.id) {
       console.warn('房間暫時不存在，稍後重試', state.roomId);
       return;
     }
 
-    // 更新玩家資訊
     const players = result.players || {};
     const me = players[state.playerId] || null;
     myRole = me?.role || null;
