@@ -169,21 +169,33 @@ async function refreshRoomList() {
 }
 
 
-function enterGame(roomId, playerId) {
-  localStorage.setItem(CONFIG.STORAGE_KEYS.roomId, roomId);
-  localStorage.setItem(CONFIG.STORAGE_KEYS.playerId, playerId);
-  state.roomId = roomId;
-  state.playerId = playerId;
-  state.myVote = null;
-  inRoom = true;
+async function enterGame(roomId, playerId) {
+    localStorage.setItem(CONFIG.STORAGE_KEYS.roomId, roomId);
+    localStorage.setItem(CONFIG.STORAGE_KEYS.playerId, playerId);
+    state.roomId = roomId;
+    state.playerId = playerId;
+    state.myVote = null;
+    inRoom = true;
 
-  document.getElementById('lobbyArea')?.classList.add('hidden');
-  document.getElementById('gameArea')?.classList.add('active');
-  document.getElementById('roomId').textContent = roomId;
+    document.getElementById('lobbyArea')?.classList.add('hidden');
+    document.getElementById('gameArea')?.classList.add('active');
+    document.getElementById('roomId').textContent = roomId;
 
-  clearInterval(pollTimer);
-  pollTimer = setInterval(pollRoom, CONFIG.POLL_INTERVAL_MS);
-  pollRoom();
+    clearInterval(pollTimer);
+
+    // ⭐ 在開始輪詢前，先確認房間確實存在
+    let tries = 0;
+    while (tries < 5) {
+        try {
+            const res = await gameAPI.getRoomState(roomId, playerId);
+            if (res?.data?.id) break; // 房間存在
+        } catch {}
+        tries++;
+        await new Promise(r => setTimeout(r, 200)); // 每 200ms 重試
+    }
+
+    pollTimer = setInterval(pollRoom, CONFIG.POLL_INTERVAL_MS);
+    pollRoom();
 }
 
 
