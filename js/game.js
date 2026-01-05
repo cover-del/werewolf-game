@@ -333,20 +333,18 @@ function changeMyAvatar() {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/*';
-
+  
   input.onchange = async function () {
     const file = input.files[0];
     if (!file) return;
 
     const reader = new FileReader();
 
-    // 讀取開始
     reader.onloadstart = () => {
       console.log('📤 讀取檔案中...');
       document.getElementById('uploadStatus').textContent = '讀取檔案中...';
     };
 
-    // 讀取進度
     reader.onprogress = (e) => {
       if (e.lengthComputable) {
         const percent = Math.round((e.loaded / e.total) * 100);
@@ -354,23 +352,25 @@ function changeMyAvatar() {
       }
     };
 
-    // 讀取完成 → 上傳
     reader.onload = async function () {
       console.log('📤 準備上傳...');
       document.getElementById('uploadStatus').textContent = '上傳中...';
-
+      
       try {
         const res = await gameAPI.uploadAvatar(reader.result, file.name);
 
+        // fallback 機制：如果沒有 url 或不是字串，使用預設頭像
+        const avatarUrl = res?.success && typeof res.url === 'string' ? res.url : 'https://via.placeholder.com/50';
+
+        document.querySelector('#myAvatarImg').src = avatarUrl;
+
         if (res?.success) {
-          console.log('✅ 上傳成功，更新前端頭像');
-          document.querySelector('#myAvatarImg')?.setAttribute('src', res.url);
-          document.getElementById('uploadStatus').textContent = '上傳完成';
           alert('✅ 頭像已更新');
+          document.getElementById('uploadStatus').textContent = '上傳完成';
         } else {
-          console.warn('❌ 上傳失敗', res?.error);
-          document.getElementById('uploadStatus').textContent = '上傳失敗';
+          console.warn('上傳失敗或格式錯誤', res);
           alert('❌ 頭像上傳失敗：' + (res?.error || '未知錯誤'));
+          document.getElementById('uploadStatus').textContent = '上傳失敗';
         }
       } catch (e) {
         console.error('uploadAvatar 錯誤', e);
@@ -379,19 +379,17 @@ function changeMyAvatar() {
       }
     };
 
-    // 讀取錯誤
     reader.onerror = () => {
       console.error('讀取檔案失敗');
       document.getElementById('uploadStatus').textContent = '讀取檔案失敗';
-      alert('❌ 讀取檔案失敗');
     };
 
-    // 開始讀取檔案
     reader.readAsDataURL(file);
   };
 
   input.click();
 }
+
 
 
 // ================= 登出 =================
