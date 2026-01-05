@@ -369,4 +369,3 @@ window.rejoinRoom = async function (roomId, playerId) {
     leaveRoomSafe();
   }
 };
-
