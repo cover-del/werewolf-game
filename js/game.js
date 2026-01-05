@@ -333,18 +333,20 @@ function changeMyAvatar() {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/*';
-  
+
   input.onchange = async function () {
     const file = input.files[0];
     if (!file) return;
 
     const reader = new FileReader();
 
+    // 讀取開始
     reader.onloadstart = () => {
       console.log('📤 讀取檔案中...');
       document.getElementById('uploadStatus').textContent = '讀取檔案中...';
     };
 
+    // 讀取進度
     reader.onprogress = (e) => {
       if (e.lengthComputable) {
         const percent = Math.round((e.loaded / e.total) * 100);
@@ -352,20 +354,23 @@ function changeMyAvatar() {
       }
     };
 
+    // 讀取完成 → 上傳
     reader.onload = async function () {
       console.log('📤 準備上傳...');
       document.getElementById('uploadStatus').textContent = '上傳中...';
-      
+
       try {
         const res = await gameAPI.uploadAvatar(reader.result, file.name);
-        
+
         if (res?.success) {
-          alert('✅ 頭像已更新');
-          document.querySelector('#myAvatarImg').src = res.url;
+          console.log('✅ 上傳成功，更新前端頭像');
+          document.querySelector('#myAvatarImg')?.setAttribute('src', res.url);
           document.getElementById('uploadStatus').textContent = '上傳完成';
+          alert('✅ 頭像已更新');
         } else {
-          alert('❌ 頭像上傳失敗：' + (res?.error || '未知錯誤'));
+          console.warn('❌ 上傳失敗', res?.error);
           document.getElementById('uploadStatus').textContent = '上傳失敗';
+          alert('❌ 頭像上傳失敗：' + (res?.error || '未知錯誤'));
         }
       } catch (e) {
         console.error('uploadAvatar 錯誤', e);
@@ -374,17 +379,19 @@ function changeMyAvatar() {
       }
     };
 
+    // 讀取錯誤
     reader.onerror = () => {
       console.error('讀取檔案失敗');
       document.getElementById('uploadStatus').textContent = '讀取檔案失敗';
+      alert('❌ 讀取檔案失敗');
     };
 
+    // 開始讀取檔案
     reader.readAsDataURL(file);
   };
 
   input.click();
 }
-
 
 
 // ================= 登出 =================
