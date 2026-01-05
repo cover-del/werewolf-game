@@ -35,10 +35,12 @@ document.addEventListener('DOMContentLoaded', async function () {
         await rejoinRoom(roomId, playerId);
         rejoined = true;
       } else {
-        localStorage.removeItem(...)
+        localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
+        localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
       }
-    } catch {
-      localStorage.removeItem(...)
+    } catch (e) {
+      localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
+      localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
     }
   }
   
@@ -71,7 +73,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         <p><strong>敗場:</strong> ${data.losses || 0}</p>
         <p><strong>勝率:</strong> ${data.winRate || 0}%</p>
       `;
-    } catch {
+    } catch (e) {
       content.textContent = '載入玩家資訊失敗';
     }
     modal.style.display = 'flex';
@@ -108,7 +110,7 @@ async function createRoom() {
     const result = res?.data || res;
     if (result.error) errorDiv.textContent = result.error;
     else enterGame(result.roomId, result.playerId);
-  } catch {
+} catch (e) {
     errorDiv.textContent = '建立房間失敗';
   }
 }
@@ -124,7 +126,7 @@ async function joinRoom() {
     const result = res?.data || res;
     if (result.error) errorDiv.textContent = result.error;
     else enterGame(roomId, result.playerId);
-  } catch {
+  } catch (e) {
     errorDiv.textContent = '加入房間失敗';
   }
 }
@@ -167,7 +169,7 @@ async function refreshRoomList() {
       `;
       roomList.appendChild(div);
     });
-  } catch {
+  } catch (e) {
     roomList.innerHTML = '<div style="text-align:center;color:red;padding:20px;">刷新房間列表失敗</div>';
   }
 }
@@ -333,7 +335,7 @@ window.rejoinRoom = async function (roomId, playerId) {
     clearInterval(pollTimer);
     pollTimer = setInterval(pollRoom, CONFIG.POLL_INTERVAL_MS);
     await pollRoom();
-  } catch {
+  } catch (e) {
     // 無法回房 → 清掉 localStorage
     localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId);
     localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId);
