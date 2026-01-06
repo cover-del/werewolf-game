@@ -385,17 +385,7 @@ function ensureStartButton() {
 
 function ensureResolveNightButton() {
   let nightBtn = document.getElementById('resolveNightBtn');
-  const container = document.querySelector('.game-area .card'); 
-  if (!container) return console.warn('.game-area .card 不存在');
-
-  // 只建立一次按鈕
-  if (!nightBtn) {
-    nightBtn = document.createElement('button');
-    nightBtn.id = 'resolveNightBtn';
-    nightBtn.textContent = '結束夜晚';
-    nightBtn.className = 'btn-primary';
-    container.prepend(nightBtn);
-  }
+  if (!nightBtn) return console.warn('#resolveNightBtn 不存在');
 
   const me = state.latestPlayers[state.playerId];
 
@@ -406,7 +396,6 @@ function ensureResolveNightButton() {
   nightBtn.title = '點擊結束夜晚（非房主點了不會有作用）';
 
   nightBtn.onclick = async () => {
-    // 只有房主才真的結束夜晚
     if (!me?.isHost) {
       alert('只有房主可以結束夜晚');
       return;
@@ -425,7 +414,6 @@ function ensureResolveNightButton() {
     }
   };
 }
-
 
 
 async function pollRoom() {
