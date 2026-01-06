@@ -350,7 +350,7 @@ async function uploadAvatar(dataUrl, filename) {
   }
 }
 
-// ===== changeMyAvatar =====
+// ===== 安全版 changeMyAvatar =====
 function changeMyAvatar() {
   const input = document.createElement('input');
   input.type = 'file';
@@ -368,12 +368,18 @@ function changeMyAvatar() {
 
     reader.onload = async function () {
       document.getElementById('uploadStatus').textContent = '上傳中...';
-    
+
       try {
         const res = await uploadAvatar(reader.result, file.name);
-    
+
+        // ✅ 保證 avatarUrl 是字串
+        let avatarUrl = null;
         if (res?.success && res.url) {
-          document.getElementById('myAvatarImg').src = res.url;
+          avatarUrl = typeof res.url === 'string' ? res.url : res.url.url || null;
+        }
+
+        if (avatarUrl) {
+          document.getElementById('myAvatarImg').src = avatarUrl;
           document.getElementById('uploadStatus').textContent = '上傳完成';
           alert('✅ 頭像已更新');
         } else {
@@ -381,7 +387,7 @@ function changeMyAvatar() {
           document.getElementById('uploadStatus').textContent = '上傳失敗';
           alert('❌ 上傳失敗：' + (res?.error || '未知錯誤'));
         }
-    
+
       } catch (e) {
         console.error(e);
         document.getElementById('uploadStatus').textContent = '上傳錯誤';
