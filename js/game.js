@@ -211,10 +211,10 @@ async function enterGame(roomId, playerId) {
 // ================= 夜晚 / 投票 UI =================
 // ================= 夜晚操作封裝 =================
 async function submitNightKill(targetId) {
-  if (!state.roomId || !state.playerId) return console.warn('房間或玩家ID缺失');
-  if (!targetId) return console.warn('submitNightKill 缺少目標ID');
+  if (!state.roomId || !state.playerId || !targetId) return;
   try {
-    await gameAPI.submitNightAction(state.roomId, state.playerId, { type: 'kill', targetId });
+    const actionStr = `kill:${targetId}`;
+    await gameAPI.submitNightAction(state.roomId, state.playerId, actionStr);
   } catch (e) {
     console.error('submitNightKill 失敗', e);
     alert('夜晚行動失敗: ' + e.message);
@@ -222,10 +222,10 @@ async function submitNightKill(targetId) {
 }
 
 async function submitNightCheck(targetId) {
-  if (!state.roomId || !state.playerId) return console.warn('房間或玩家ID缺失');
-  if (!targetId) return console.warn('submitNightCheck 缺少目標ID');
+  if (!state.roomId || !state.playerId || !targetId) return;
   try {
-    await gameAPI.submitNightAction(state.roomId, state.playerId, { type: 'check', targetId });
+    const actionStr = `check:${targetId}`;
+    await gameAPI.submitNightAction(state.roomId, state.playerId, actionStr);
   } catch (e) {
     console.error('submitNightCheck 失敗', e);
     alert('夜晚行動失敗: ' + e.message);
@@ -233,15 +233,16 @@ async function submitNightCheck(targetId) {
 }
 
 async function submitNightSave(targetId) {
-  if (!state.roomId || !state.playerId) return console.warn('房間或玩家ID缺失');
-  if (!targetId) return console.warn('submitNightSave 缺少目標ID');
+  if (!state.roomId || !state.playerId || !targetId) return;
   try {
-    await gameAPI.submitNightAction(state.roomId, state.playerId, { type: 'save', targetId });
+    const actionStr = `save:${targetId}`;
+    await gameAPI.submitNightAction(state.roomId, state.playerId, actionStr);
   } catch (e) {
     console.error('submitNightSave 失敗', e);
     alert('夜晚行動失敗: ' + e.message);
   }
 }
+
 
 // ================= 顯示夜晚 UI =================
 function showNightUI() {
