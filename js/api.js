@@ -51,7 +51,7 @@ class GameAPI {
   assignRoles(roomId, callerId) { return this.request('assignRoles', { roomId, callerId }); }
 
   // ===== 夜晚操作 =====
-  submitNightAction(roomId, playerId, action) { return this.request('submitNightAction', { roomId, playerId, action }); }
+  submitNightAction(roomId, playerId, action) {return this.request('submitNightAction', { roomId, playerId, ...action });}
   resolveNight(roomId, callerId) { return this.request('resolveNight', { roomId, callerId }); }
 
   // ===== 投票 =====
