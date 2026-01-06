@@ -209,18 +209,51 @@ async function enterGame(roomId, playerId) {
 }
 // ================= 核心輪詢 =================
 // ================= 夜晚 / 投票 UI =================
+// ================= 夜晚操作封裝 =================
+async function submitNightKill(targetId) {
+  if (!state.roomId || !state.playerId) return console.warn('房間或玩家ID缺失');
+  if (!targetId) return console.warn('submitNightKill 缺少目標ID');
+  try {
+    await gameAPI.submitNightAction(state.roomId, state.playerId, { type: 'kill', targetId });
+  } catch (e) {
+    console.error('submitNightKill 失敗', e);
+    alert('夜晚行動失敗: ' + e.message);
+  }
+}
+
+async function submitNightCheck(targetId) {
+  if (!state.roomId || !state.playerId) return console.warn('房間或玩家ID缺失');
+  if (!targetId) return console.warn('submitNightCheck 缺少目標ID');
+  try {
+    await gameAPI.submitNightAction(state.roomId, state.playerId, { type: 'check', targetId });
+  } catch (e) {
+    console.error('submitNightCheck 失敗', e);
+    alert('夜晚行動失敗: ' + e.message);
+  }
+}
+
+async function submitNightSave(targetId) {
+  if (!state.roomId || !state.playerId) return console.warn('房間或玩家ID缺失');
+  if (!targetId) return console.warn('submitNightSave 缺少目標ID');
+  try {
+    await gameAPI.submitNightAction(state.roomId, state.playerId, { type: 'save', targetId });
+  } catch (e) {
+    console.error('submitNightSave 失敗', e);
+    alert('夜晚行動失敗: ' + e.message);
+  }
+}
+
+// ================= 顯示夜晚 UI =================
 function showNightUI() {
   const nightDiv = document.getElementById('nightActionDiv');
   const voteDiv = document.getElementById('voteDiv');
   nightDiv.style.display = 'block';
   voteDiv.style.display = 'none';
 
-  // 顯示角色對應操作
   const nightActionArea = document.getElementById('nightActionArea');
   nightActionArea.innerHTML = '';
   if (!myRole) return;
 
-  // 取得存活玩家列表
   const players = Object.values(state.latestPlayers || {}).filter(p => p.alive && p.id !== state.playerId);
 
   if (myRole === 'werewolf') {
@@ -228,7 +261,7 @@ function showNightUI() {
     players.forEach(p => {
       const btn = document.createElement('button');
       btn.textContent = p.name;
-      btn.onclick = () => submitNightAction('kill', p.id);
+      btn.onclick = () => submitNightKill(p.id);
       nightActionArea.appendChild(btn);
     });
   } else if (myRole === 'seer') {
@@ -236,7 +269,7 @@ function showNightUI() {
     players.forEach(p => {
       const btn = document.createElement('button');
       btn.textContent = p.name;
-      btn.onclick = () => submitNightAction('check', p.id);
+      btn.onclick = () => submitNightCheck(p.id);
       nightActionArea.appendChild(btn);
     });
   } else if (myRole === 'doctor') {
@@ -244,13 +277,14 @@ function showNightUI() {
     players.forEach(p => {
       const btn = document.createElement('button');
       btn.textContent = p.name;
-      btn.onclick = () => submitNightAction('save', p.id);
+      btn.onclick = () => submitNightSave(p.id);
       nightActionArea.appendChild(btn);
     });
   } else {
     nightActionArea.innerHTML = '<p>等待夜晚結束...</p>';
   }
 }
+
 
 function showDayUI() {
   const nightDiv = document.getElementById('nightActionDiv');
