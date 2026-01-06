@@ -389,11 +389,11 @@ function ensureResolveNightButton() {
 
   const me = state.latestPlayers[state.playerId];
 
-  // 永遠顯示按鈕
+  // 永遠顯示
   nightBtn.style.display = 'inline-block';
   nightBtn.disabled = false;
   nightBtn.textContent = '結束夜晚';
-  nightBtn.title = '點擊結束夜晚（非房主點了不會有作用）';
+  nightBtn.title = '點擊結束夜晚（只有房主有效）';
 
   nightBtn.onclick = async () => {
     if (!me?.isHost) {
@@ -414,6 +414,7 @@ function ensureResolveNightButton() {
     }
   };
 }
+
 
 
 async function pollRoom() {
