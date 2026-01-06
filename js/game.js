@@ -404,12 +404,7 @@ async function leaveRoomSafe() {
 
 // ================= 顯示 =================
 // 預設頭像陣列（可以放多個，沒上傳頭像時隨機選）
-const DEFAULT_AVATARS = [
-  'https://via.placeholder.com/50?text=👤',
-  'https://via.placeholder.com/50?text=😀',
-  'https://via.placeholder.com/50?text=😎',
-  'https://via.placeholder.com/50?text=🤖'
-];
+const DEFAULT_AVATARS = ['img/roles/像素1.png'];
 
 function updatePlayerList(players) {
   const playerList = document.getElementById('playerList');
