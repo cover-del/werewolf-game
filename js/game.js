@@ -344,14 +344,15 @@ async function uploadAvatar(dataUrl, filename) {
 
     if (!json.success) throw new Error(json.error || '上傳失敗');
 
-    // ⚡ json.data.url 就是最終 URL
-    return json.data;
+    // ⚡ 直接回傳 url 字串
+    return { success: true, url: json.data.url };
 
   } catch (e) {
     console.error('uploadAvatar 錯誤', e);
     return { success: false, error: e.message };
   }
 }
+
 
 // ===== changeMyAvatar =====
 function changeMyAvatar() {
