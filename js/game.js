@@ -2,7 +2,7 @@
  * 狼人殺遊戲 - 主遊戲邏輯（整理版 ES2018 Safe）
  */
 console.log('game.js start');
-
+const DIRECT_GAS_URL = 'https://script.google.com/macros/s/AKfycbx15oqFdocd5EIRgbDt3_HPa9E6ABrkU8ljR68qAT7mje5MhXGSbqDvcbSQ4vhPouub/exec';
 let state = {
   roomId: null,
   playerId: null,
@@ -329,11 +329,33 @@ async function sendChat() { const input=document.getElementById('chatInput'); if
 async function leaveRoom() { await gameAPI.leaveRoom(state.roomId, state.playerId); localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId); localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId); clearInterval(pollTimer); location.reload(); }
 
 // ================= 頭像 =================
+
+async function uploadAvatarDirect(dataUrl, filename) {
+  try {
+    const res = await fetch(DIRECT_GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'uploadAvatar',
+        dataUrl,
+        filename
+      })
+    });
+
+    const json = await res.json();
+    return json;
+  } catch (e) {
+    console.error('直連 GAS 上傳失敗', e);
+    return { success: false, error: e.message };
+  }
+}
+
+
 function changeMyAvatar() {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/*';
-  
+
   input.onchange = async function () {
     const file = input.files[0];
     if (!file) return;
@@ -341,47 +363,34 @@ function changeMyAvatar() {
     const reader = new FileReader();
 
     reader.onloadstart = () => {
-      console.log('📤 讀取檔案中...');
       document.getElementById('uploadStatus').textContent = '讀取檔案中...';
     };
 
-    reader.onprogress = (e) => {
-      if (e.lengthComputable) {
-        const percent = Math.round((e.loaded / e.total) * 100);
-        document.getElementById('uploadStatus').textContent = `讀取檔案 ${percent}%`;
-      }
-    };
-
     reader.onload = async function () {
-      console.log('📤 準備上傳...');
       document.getElementById('uploadStatus').textContent = '上傳中...';
 
       try {
-        const res = await gameAPI.uploadAvatar(reader.result, file.name);
+        const res = await uploadAvatarDirect(reader.result, file.name);
 
-        // fallback 機制
-        const avatarUrl = res?.success && typeof res.url === 'string' ? res.url : 'https://via.placeholder.com/50';
-
-        document.querySelector('#myAvatarImg').src = avatarUrl;
-
-        if (res?.success) {
-          alert('✅ 頭像已更新');
+        if (res?.success && typeof res.url === 'string') {
+          document.getElementById('myAvatarImg').src = res.url;
           document.getElementById('uploadStatus').textContent = '上傳完成';
+          alert('✅ 頭像已更新');
         } else {
-          console.warn('上傳失敗或格式錯誤', res);
-          alert('❌ 頭像上傳失敗：' + (res?.error || '未知錯誤'));
+          console.warn('頭像上傳失敗', res);
           document.getElementById('uploadStatus').textContent = '上傳失敗';
+          alert('❌ 上傳失敗：' + (res?.error || '未知錯誤'));
         }
+
       } catch (e) {
-        console.error('uploadAvatar 錯誤', e);
+        console.error(e);
         document.getElementById('uploadStatus').textContent = '上傳錯誤';
-        alert('❌ 上傳過程發生錯誤：' + e.message);
+        alert('❌ 上傳錯誤：' + e.message);
       }
     };
 
     reader.onerror = () => {
-      console.error('讀取檔案失敗');
-      document.getElementById('uploadStatus').textContent = '讀取檔案失敗';
+      document.getElementById('uploadStatus').textContent = '讀取失敗';
     };
 
     reader.readAsDataURL(file);
@@ -389,6 +398,7 @@ function changeMyAvatar() {
 
   input.click();
 }
+
 
 
 
