@@ -312,22 +312,32 @@ function ensureStartButton() {
   }
 
   const me = state.latestPlayers[state.playerId];
+  const aliveCount = Object.values(state.latestPlayers || {}).filter(p => p.alive).length;
 
-  // ⭐ 房主且階段是 lobby → 顯示開始遊戲按鈕
-  const waitingPhases = ['waiting', 'lobby']; 
-  if (me?.isHost && waitingPhases.includes(state.phase)) {
+  if (me?.isHost && state.phase === 'waiting') {
     startBtn.style.display = 'inline-block';
+    
+    if (aliveCount < 4) {
+      startBtn.title = '玩家不足（至少 4 人）';
+      startBtn.style.opacity = 0.7; // 視覺提示
+    } else {
+      startBtn.title = '';
+      startBtn.style.opacity = 1;
+    }
   } else {
     startBtn.style.display = 'none';
   }
 
+  // 按鈕事件：永遠可點，錯誤由後端處理
   startBtn.onclick = async () => {
-    startBtn.disabled = true;
     try {
-      await gameAPI.assignRoles(state.roomId, state.playerId);
+      const result = await gameAPI.assignRoles(state.roomId, state.playerId);
+      if (result?.error) {
+        alert('無法開始遊戲: ' + result.error);
+        console.warn('assignRoles error:', result.error);
+      }
     } catch (e) {
       console.error('開始遊戲失敗', e);
-      startBtn.disabled = false;
     }
   };
 }
