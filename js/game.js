@@ -388,39 +388,40 @@ function ensureResolveNightButton() {
   const container = document.querySelector('.game-area .card'); 
   if (!container) return console.warn('.game-area .card 不存在');
 
+  // 建立按鈕（只做一次）
   if (!nightBtn) {
     nightBtn = document.createElement('button');
     nightBtn.id = 'resolveNightBtn';
     nightBtn.textContent = '結束夜晚';
     nightBtn.className = 'btn-primary';
-    nightBtn.style.display = 'none'; // 預設隱藏
     container.prepend(nightBtn);
   }
 
   const me = state.latestPlayers[state.playerId];
-  if (state.phase === 'night' && me?.isHost) {
+
+  // ⭐ 顯示條件：房主 + 夜晚階段
+  if (me?.isHost && (state.phase === 'night' || state.phase === 'rolesAssigned')) {
     nightBtn.style.display = 'inline-block';
-    nightBtn.style.opacity = 1;
-    nightBtn.style.pointerEvents = 'auto';
+    nightBtn.disabled = false;
+    nightBtn.textContent = '結束夜晚';
     nightBtn.title = '點擊結束夜晚';
+
+    nightBtn.onclick = async () => {
+      nightBtn.disabled = true;
+      nightBtn.textContent = '結算中...';
+      try {
+        await resolveNight();
+      } catch (e) {
+        console.error('resolveNight 失敗', e);
+        alert('夜晚結算失敗：' + e.message);
+      } finally {
+        nightBtn.disabled = false;
+        nightBtn.textContent = '結束夜晚';
+      }
+    };
   } else {
     nightBtn.style.display = 'none';
-    return;
   }
-
-  nightBtn.onclick = async () => {
-    nightBtn.disabled = true;
-    nightBtn.textContent = '結算中...';
-    try {
-      await resolveNight();
-    } catch (e) {
-      console.error('resolveNight 失敗', e);
-      alert('夜晚結算失敗：' + e.message);
-    } finally {
-      nightBtn.disabled = false;
-      nightBtn.textContent = '結束夜晚';
-    }
-  };
 }
 
 
