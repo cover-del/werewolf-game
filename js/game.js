@@ -375,23 +375,30 @@ function changeMyAvatar() {
 
     reader.onload = async function () {
       document.getElementById('uploadStatus').textContent = '上傳中...';
+    
       try {
-        const res = await uploadAvatar(reader.result, file.name);
-        if (res?.success && res.url) {
-          document.getElementById('myAvatarImg').src = res.url; // ⚡ 直接用 URL
+        const res = await gameAPI.uploadAvatar(reader.result, file.name);
+        
+        const data = res?.data; // 注意這裡
+        const avatarUrl = data?.url;
+    
+        if (data?.success && avatarUrl) {
+          document.getElementById('myAvatarImg').src = avatarUrl;
           document.getElementById('uploadStatus').textContent = '上傳完成';
           alert('✅ 頭像已更新');
         } else {
           console.warn('頭像上傳失敗', res);
           document.getElementById('uploadStatus').textContent = '上傳失敗';
-          alert('❌ 上傳失敗：' + (res?.error || '未知錯誤'));
+          alert('❌ 上傳失敗：' + (data?.error || '未知錯誤'));
         }
+    
       } catch (e) {
         console.error(e);
         document.getElementById('uploadStatus').textContent = '上傳錯誤';
         alert('❌ 上傳錯誤：' + e.message);
       }
     };
+
 
     reader.onerror = () => {
       document.getElementById('uploadStatus').textContent = '讀取失敗';
