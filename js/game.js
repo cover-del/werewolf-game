@@ -333,30 +333,22 @@ async function leaveRoom() { await gameAPI.leaveRoom(state.roomId, state.playerI
 
 
 // ===== 安全封裝：呼叫後端並取得字串 URL =====
-async function uploadAvatarSafe(dataUrl, filename) {
+async function uploadAvatar(dataUrl, filename) {
   try {
-    const res = await gameAPI.uploadAvatar(dataUrl, filename);
-    // gameAPI.request 會回傳 json.data 或 { error: '...' } 等
-    if (!res) return { success: false, error: '無回應' };
-    // 處理不同層級的可能結果
-    if (res.error) return { success: false, error: res.error };
-    // 後端可能回 { success:true, url: '...' } 或是 { url:'...' } 或 { data: { ... } }
-    let url = null;
-    if (typeof res === 'string') url = res;
-    else if (typeof res.url === 'string') url = res.url;
-    else if (res.data && typeof res.data.url === 'string') url = res.data.url;
-    else if (res.success === true && typeof res === 'object') {
-      // 兼容舊格式
-      url = Object.values(res).find(v => typeof v === 'string' && v.startsWith('http')) || null;
-    }
-
-    if (!url) return { success: false, error: '伺服器未回傳 URL' };
-    return { success: true, url };
+    const res = await fetch(CONFIG.GS_WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'uploadAvatar', dataUrl, filename })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || '上傳失敗');
+    return json; // ⚡ json.url 就是字串
   } catch (e) {
-    console.error('uploadAvatarSafe 錯誤', e);
-    return { success: false, error: e.message || String(e) };
+    console.error('uploadAvatar 錯誤', e);
+    return { success: false, error: e.message };
   }
 }
+
 
 // ===== 使用上面的安全封裝的 changeMyAvatar 實作（保留提示） =====
 function changeMyAvatar() {
@@ -383,24 +375,21 @@ function changeMyAvatar() {
 
     reader.onload = async function () {
       document.getElementById('uploadStatus').textContent = '上傳中...';
-
       try {
-        const res = await uploadAvatarSafe(reader.result, file.name);
-
-        if (res.success && res.url) {
-          // 直接把後端給的 URL 設成 img src（你的 GAS doGet 會代理回傳檔案）
-          document.getElementById('myAvatarImg').src = res.url;
+        const res = await uploadAvatar(reader.result, file.name);
+        if (res?.success && res.url) {
+          document.getElementById('myAvatarImg').src = res.url; // ⚡ 直接用 URL
           document.getElementById('uploadStatus').textContent = '上傳完成';
           alert('✅ 頭像已更新');
         } else {
           console.warn('頭像上傳失敗', res);
           document.getElementById('uploadStatus').textContent = '上傳失敗';
-          alert('❌ 上傳失敗：' + (res.error || '未知錯誤'));
+          alert('❌ 上傳失敗：' + (res?.error || '未知錯誤'));
         }
       } catch (e) {
-        console.error('changeMyAvatar 錯誤', e);
+        console.error(e);
         document.getElementById('uploadStatus').textContent = '上傳錯誤';
-        alert('❌ 上傳錯誤：' + (e.message || String(e)));
+        alert('❌ 上傳錯誤：' + e.message);
       }
     };
 
