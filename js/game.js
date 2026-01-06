@@ -2,7 +2,7 @@
  * 狼人殺遊戲 - 主遊戲邏輯（整理版 ES2018 Safe）
  */
 console.log('game.js start');
-const DIRECT_GAS_URL = 'https://script.google.com/macros/s/AKfycbx15oqFdocd5EIRgbDt3_HPa9E6ABrkU8ljR68qAT7mje5MhXGSbqDvcbSQ4vhPouub/exec';
+
 let state = {
   roomId: null,
   playerId: null,
@@ -330,25 +330,6 @@ async function leaveRoom() { await gameAPI.leaveRoom(state.roomId, state.playerI
 
 // ================= 頭像 =================
 
-async function uploadAvatarDirect(dataUrl, filename) {
-  try {
-    const res = await fetch(DIRECT_GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'uploadAvatar',
-        dataUrl,
-        filename
-      })
-    });
-
-    const json = await res.json();
-    return json;
-  } catch (e) {
-    console.error('直連 GAS 上傳失敗', e);
-    return { success: false, error: e.message };
-  }
-}
 
 
 function changeMyAvatar() {
@@ -370,7 +351,7 @@ function changeMyAvatar() {
       document.getElementById('uploadStatus').textContent = '上傳中...';
 
       try {
-        const res = await uploadAvatarDirect(reader.result, file.name);
+        const res = await gameAPI.uploadAvatar(reader.result, file.name);
 
         if (res?.success && typeof res.url === 'string') {
           document.getElementById('myAvatarImg').src = res.url;
@@ -398,6 +379,7 @@ function changeMyAvatar() {
 
   input.click();
 }
+
 
 
 
