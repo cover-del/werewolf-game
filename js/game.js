@@ -345,53 +345,45 @@ async function uploadAvatar(dataUrl, filename) {
 
     const json = await res.json();
 
-    if (!json.success || !json.data?.success) {
-      throw new Error(json.data?.error || json.error || '上傳失敗');
+    if (!json.success || !json.data?.url) {
+      throw new Error(json.error || '上傳失敗');
     }
 
-    return json.data; // { success: true, url: '...' }
+    return { success: true, url: json.data.url };
 
-  } catch(e) {
+  } catch (e) {
     console.error('uploadAvatar 錯誤', e);
     return { success: false, error: e.message };
   }
 }
 
-// ===== changeMyAvatar =====
+/**
+ * 選擇檔案並上傳
+ */
 function changeMyAvatar() {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/*';
 
-  input.onchange = async function() {
+  input.onchange = async function () {
     const file = input.files[0];
     if (!file) return;
 
     const reader = new FileReader();
+    reader.onloadstart = () => document.getElementById('uploadStatus').textContent = '讀取檔案中...';
 
-    reader.onloadstart = () => {
-      document.getElementById('uploadStatus').textContent = '讀取檔案中...';
-    };
-
-    reader.onload = async function() {
+    reader.onload = async function () {
       document.getElementById('uploadStatus').textContent = '上傳中...';
 
-      try {
-        const data = await uploadAvatar(reader.result, file.name);
-        if (data?.success && data.url) {
-          document.getElementById('myAvatarImg').src = data.url;
-          document.getElementById('uploadStatus').textContent = '上傳完成';
-          alert('✅ 頭像已更新');
-        } else {
-          console.warn('頭像上傳失敗', data);
-          document.getElementById('uploadStatus').textContent = '上傳失敗';
-          alert('❌ 上傳失敗：' + (data?.error || '未知錯誤'));
-        }
-
-      } catch(e) {
-        console.error(e);
-        document.getElementById('uploadStatus').textContent = '上傳錯誤';
-        alert('❌ 上傳錯誤：' + e.message);
+      const res = await uploadAvatar(reader.result, file.name);
+      if (res.success && res.url) {
+        document.getElementById('myAvatarImg').src = res.url;
+        document.getElementById('uploadStatus').textContent = '上傳完成';
+        alert('✅ 頭像已更新');
+      } else {
+        console.warn('頭像上傳失敗', res);
+        document.getElementById('uploadStatus').textContent = '上傳失敗';
+        alert('❌ 上傳失敗：' + res.error);
       }
     };
 
@@ -405,8 +397,6 @@ function changeMyAvatar() {
 
   input.click();
 }
-
-
 
 
 // ================= 登出 =================
