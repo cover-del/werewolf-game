@@ -298,6 +298,39 @@ function showEndUI(winner, players) {
   }
 }
 
+function ensureStartButton() {
+  let startBtn = document.getElementById('startGameBtn');
+  const container = document.querySelector('.game-area .card');
+  if (!container) return console.warn('.game-area .card 不存在');
+
+  if (!startBtn) {
+    startBtn = document.createElement('button');
+    startBtn.id = 'startGameBtn';
+    startBtn.textContent = '開始遊戲';
+    startBtn.className = 'btn-primary';
+    container.prepend(startBtn);
+  }
+
+  // 房主顯示條件
+  const me = state.latestPlayers[state.playerId];
+  if (me?.isHost && state.phase === 'waiting') {
+    startBtn.style.display = 'inline-block';
+  } else {
+    startBtn.style.display = 'none';
+  }
+
+  startBtn.onclick = async () => {
+    startBtn.disabled = true;
+    try {
+      await gameAPI.assignRoles(state.roomId, state.playerId);
+    } catch (e) {
+      console.error('開始遊戲失敗', e);
+      startBtn.disabled = false;
+    }
+  };
+}
+
+
 async function pollRoom() {
   if (!state.roomId || !state.playerId) return;
 
@@ -322,31 +355,7 @@ async function pollRoom() {
     updateChat(result.chat || []);
 
     // ----------- 房主開始遊戲按鈕 -----------
-    let startBtn = document.getElementById('startGameBtn');
-    if (!startBtn) {
-      // 如果 DOM 裡沒有，就動態建立一個
-      startBtn = document.createElement('button');
-      startBtn.id = 'startGameBtn';
-      startBtn.textContent = '開始遊戲';
-      startBtn.className = 'btn-primary';
-      document.querySelector('.game-area .card').prepend(startBtn);
-    }
-
-    if (me?.isHost && result.phase === 'waiting') {
-      startBtn.style.display = 'inline-block';
-    } else {
-      startBtn.style.display = 'none';
-    }
-
-    startBtn.onclick = async () => {
-      startBtn.disabled = true; // 防止連點
-      try {
-        await gameAPI.assignRoles(state.roomId, state.playerId);
-      } catch (e) {
-        console.error('開始遊戲失敗', e);
-        startBtn.disabled = false;
-      }
-    };
+     ensureStartButton()
 
     // ----------- 更新遊戲階段 UI -----------
     const phase = result.phase;
