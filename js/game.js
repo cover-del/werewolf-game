@@ -332,25 +332,33 @@ async function leaveRoom() { await gameAPI.leaveRoom(state.roomId, state.playerI
 
 
 
-// ===== uploadAvatar（不轉直連） =====
-async function uploadAvatar(dataUrl, filename) {
+// ===== 安全封裝：呼叫後端並取得字串 URL =====
+async function uploadAvatarSafe(dataUrl, filename) {
   try {
     const res = await gameAPI.uploadAvatar(dataUrl, filename);
+    // gameAPI.request 會回傳 json.data 或 { error: '...' } 等
+    if (!res) return { success: false, error: '無回應' };
+    // 處理不同層級的可能結果
+    if (res.error) return { success: false, error: res.error };
+    // 後端可能回 { success:true, url: '...' } 或是 { url:'...' } 或 { data: { ... } }
+    let url = null;
+    if (typeof res === 'string') url = res;
+    else if (typeof res.url === 'string') url = res.url;
+    else if (res.data && typeof res.data.url === 'string') url = res.data.url;
+    else if (res.success === true && typeof res === 'object') {
+      // 兼容舊格式
+      url = Object.values(res).find(v => typeof v === 'string' && v.startsWith('http')) || null;
+    }
 
-    // 直接使用 GAS 回傳的 URL
-    let url = res?.url || res?.data?.url || null;
-
-    if (!url) return { success: false, error: '無法取得頭像 URL' };
-
+    if (!url) return { success: false, error: '伺服器未回傳 URL' };
     return { success: true, url };
-
   } catch (e) {
-    console.error('uploadAvatar 錯誤', e);
-    return { success: false, error: e.message };
+    console.error('uploadAvatarSafe 錯誤', e);
+    return { success: false, error: e.message || String(e) };
   }
 }
 
-// ===== 安全版 changeMyAvatar =====
+// ===== 使用上面的安全封裝的 changeMyAvatar 實作（保留提示） =====
 function changeMyAvatar() {
   const input = document.createElement('input');
   input.type = 'file';
@@ -366,37 +374,39 @@ function changeMyAvatar() {
       document.getElementById('uploadStatus').textContent = '讀取檔案中...';
     };
 
+    reader.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        document.getElementById('uploadStatus').textContent = `讀取檔案 ${percent}%`;
+      }
+    };
+
     reader.onload = async function () {
       document.getElementById('uploadStatus').textContent = '上傳中...';
 
       try {
-        const res = await uploadAvatar(reader.result, file.name);
+        const res = await uploadAvatarSafe(reader.result, file.name);
 
-        // ✅ 保證 avatarUrl 是字串
-        let avatarUrl = null;
-        if (res?.success && res.url) {
-          avatarUrl = typeof res.url === 'string' ? res.url : res.url.url || null;
-        }
-
-        if (avatarUrl) {
-          document.getElementById('myAvatarImg').src = avatarUrl;
+        if (res.success && res.url) {
+          // 直接把後端給的 URL 設成 img src（你的 GAS doGet 會代理回傳檔案）
+          document.getElementById('myAvatarImg').src = res.url;
           document.getElementById('uploadStatus').textContent = '上傳完成';
           alert('✅ 頭像已更新');
         } else {
           console.warn('頭像上傳失敗', res);
           document.getElementById('uploadStatus').textContent = '上傳失敗';
-          alert('❌ 上傳失敗：' + (res?.error || '未知錯誤'));
+          alert('❌ 上傳失敗：' + (res.error || '未知錯誤'));
         }
-
       } catch (e) {
-        console.error(e);
+        console.error('changeMyAvatar 錯誤', e);
         document.getElementById('uploadStatus').textContent = '上傳錯誤';
-        alert('❌ 上傳錯誤：' + e.message);
+        alert('❌ 上傳錯誤：' + (e.message || String(e)));
       }
     };
 
     reader.onerror = () => {
       document.getElementById('uploadStatus').textContent = '讀取失敗';
+      alert('❌ 讀取檔案失敗');
     };
 
     reader.readAsDataURL(file);
@@ -404,7 +414,6 @@ function changeMyAvatar() {
 
   input.click();
 }
-
 
 
 
