@@ -332,24 +332,17 @@ async function leaveRoom() { await gameAPI.leaveRoom(state.roomId, state.playerI
 
 
 
-// ===== 更新 uploadAvatar，處理 Google Drive URL =====
+// ===== uploadAvatar（不轉直連） =====
 async function uploadAvatar(dataUrl, filename) {
   try {
     const res = await gameAPI.uploadAvatar(dataUrl, filename);
 
-    if (res?.success && res?.url) {
-      // 如果回傳的是 Google Drive 分享連結，自動轉直連
-      let url = res.url;
-      if (url.includes('drive.google.com')) {
-        const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-        if (match && match[1]) {
-          url = `https://drive.google.com/uc?export=view&id=${match[1]}`;
-        }
-      }
-      return { success: true, url };
-    } else {
-      return { success: false, error: res?.error || '上傳失敗' };
-    }
+    // 直接使用 GAS 回傳的 URL
+    let url = res?.url || res?.data?.url || null;
+
+    if (!url) return { success: false, error: '無法取得頭像 URL' };
+
+    return { success: true, url };
 
   } catch (e) {
     console.error('uploadAvatar 錯誤', e);
@@ -357,7 +350,7 @@ async function uploadAvatar(dataUrl, filename) {
   }
 }
 
-// ===== 更新 changeMyAvatar =====
+// ===== changeMyAvatar =====
 function changeMyAvatar() {
   const input = document.createElement('input');
   input.type = 'file';
@@ -379,14 +372,8 @@ function changeMyAvatar() {
       try {
         const res = await uploadAvatar(reader.result, file.name);
     
-        // ✅ 正確取得 URL（可能被包了一層）
-        let avatarUrl = null;
-        if (res?.success && res?.url) {
-          avatarUrl = typeof res.url === 'string' ? res.url : res.url.url || null;
-        }
-    
-        if (avatarUrl) {
-          document.getElementById('myAvatarImg').src = avatarUrl;
+        if (res?.success && res.url) {
+          document.getElementById('myAvatarImg').src = res.url;
           document.getElementById('uploadStatus').textContent = '上傳完成';
           alert('✅ 頭像已更新');
         } else {
@@ -411,6 +398,7 @@ function changeMyAvatar() {
 
   input.click();
 }
+
 
 
 
