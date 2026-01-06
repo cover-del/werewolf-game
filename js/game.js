@@ -440,20 +440,6 @@ function updateChat(chatArray) {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-function showNightUI() {
-  document.getElementById('nightActionDiv').style.display = 'block';
-  document.getElementById('voteDiv').style.display = 'none';
-}
-
-function showDayUI() {
-  document.getElementById('nightActionDiv').style.display = 'none';
-  document.getElementById('voteDiv').style.display = 'block';
-}
-
-function showEndUI(winner, players) {
-  alert(`遊戲結束！勝利方: ${winner === 'villagers' ? '村民' : '狼人'}`);
-}
-
 // ================= 夜晚 / 投票 / 角色 =================
 async function submitNightAction(type, targetId) { await gameAPI.submitNightAction(state.roomId, state.playerId, { type, targetId }); }
 async function submitMyVote() { if (!state.myVote) return alert('請選擇投票對象'); await gameAPI.submitVote(state.roomId, state.playerId, state.myVote); }
