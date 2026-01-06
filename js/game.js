@@ -349,15 +349,17 @@ function changeMyAvatar() {
 
     reader.onload = async function () {
       document.getElementById('uploadStatus').textContent = '上傳中...';
-    
+
       try {
-        // 去掉 Data URL 前綴
-        const base64Data = reader.result.split(',')[1];
-    
-        const res = await gameAPI.uploadAvatar(base64Data, file.name);
-    
+        // ✅ 清掉空格和換行
+        const cleanDataUrl = reader.result.replace(/\s/g, '');
+
+        // ✅ 上傳
+        const res = await gameAPI.uploadAvatar(cleanDataUrl, file.name);
+
+        // 取 URL
         const avatarUrl = res?.url || res?.data?.url || null;
-    
+
         if (res?.success && typeof avatarUrl === 'string') {
           document.getElementById('myAvatarImg').src = avatarUrl;
           document.getElementById('uploadStatus').textContent = '上傳完成';
@@ -367,9 +369,9 @@ function changeMyAvatar() {
           document.getElementById('uploadStatus').textContent = '上傳失敗';
           alert('❌ 上傳失敗：' + (res?.error || '未知錯誤'));
         }
-    
+
       } catch (e) {
-        console.error(e);
+        console.error('uploadAvatar 錯誤', e);
         document.getElementById('uploadStatus').textContent = '上傳錯誤';
         alert('❌ 上傳錯誤：' + e.message);
       }
@@ -384,7 +386,6 @@ function changeMyAvatar() {
 
   input.click();
 }
-
 
 
 
