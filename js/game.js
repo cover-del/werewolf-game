@@ -311,9 +311,11 @@ function ensureStartButton() {
     container.prepend(startBtn);
   }
 
-  // 房主顯示條件
   const me = state.latestPlayers[state.playerId];
-  if (me?.isHost && state.phase === 'waiting') {
+
+  // ⭐ 寬鬆判斷：只要房主且遊戲尚未開始就顯示
+  const waitingPhases = ['waiting', undefined, null, '']; // API 可能沒設階段
+  if (me?.isHost && waitingPhases.includes(state.phase)) {
     startBtn.style.display = 'inline-block';
   } else {
     startBtn.style.display = 'none';
@@ -329,6 +331,7 @@ function ensureStartButton() {
     }
   };
 }
+
 
 
 async function pollRoom() {
