@@ -207,6 +207,97 @@ async function enterGame(roomId, playerId) {
     pollRoom();
 }
 // ================= 核心輪詢 =================
+// ================= 夜晚 / 投票 UI =================
+function showNightUI() {
+  const nightDiv = document.getElementById('nightActionDiv');
+  const voteDiv = document.getElementById('voteDiv');
+  nightDiv.style.display = 'block';
+  voteDiv.style.display = 'none';
+
+  // 顯示角色對應操作
+  const nightActionArea = document.getElementById('nightActionArea');
+  nightActionArea.innerHTML = '';
+  if (!myRole) return;
+
+  // 取得存活玩家列表
+  const players = Object.values(state.latestPlayers || {}).filter(p => p.alive && p.id !== state.playerId);
+
+  if (myRole === 'werewolf') {
+    nightActionArea.innerHTML = '<p>選擇殺人目標:</p>';
+    players.forEach(p => {
+      const btn = document.createElement('button');
+      btn.textContent = p.name;
+      btn.onclick = () => submitNightAction('kill', p.id);
+      nightActionArea.appendChild(btn);
+    });
+  } else if (myRole === 'seer') {
+    nightActionArea.innerHTML = '<p>選擇查驗目標:</p>';
+    players.forEach(p => {
+      const btn = document.createElement('button');
+      btn.textContent = p.name;
+      btn.onclick = () => submitNightAction('check', p.id);
+      nightActionArea.appendChild(btn);
+    });
+  } else if (myRole === 'doctor') {
+    nightActionArea.innerHTML = '<p>選擇守護目標:</p>';
+    players.forEach(p => {
+      const btn = document.createElement('button');
+      btn.textContent = p.name;
+      btn.onclick = () => submitNightAction('protect', p.id);
+      nightActionArea.appendChild(btn);
+    });
+  } else {
+    nightActionArea.innerHTML = '<p>等待夜晚結束...</p>';
+  }
+}
+
+function showDayUI() {
+  const nightDiv = document.getElementById('nightActionDiv');
+  const voteDiv = document.getElementById('voteDiv');
+  nightDiv.style.display = 'none';
+  voteDiv.style.display = 'block';
+
+  const voteArea = document.getElementById('voteArea');
+  voteArea.innerHTML = '';
+
+  const players = Object.values(state.latestPlayers || {}).filter(p => p.alive && p.id !== state.playerId);
+
+  if (players.length === 0) return voteArea.innerHTML = '<p>無人可投票</p>';
+
+  voteArea.innerHTML = '<p>投票選擇要處決的玩家:</p>';
+
+  players.forEach(p => {
+    const btn = document.createElement('button');
+    btn.textContent = p.name;
+    btn.disabled = state.myVote === p.id;
+    btn.onclick = () => {
+      state.myVote = p.id;
+      submitMyVote();
+      showDayUI(); // 更新按鈕狀態
+    };
+    voteArea.appendChild(btn);
+  });
+}
+
+function showEndUI(winner, players) {
+  clearInterval(pollTimer);
+  pollTimer = null;
+
+  const endDiv = document.getElementById('endGameDiv');
+  if (endDiv) {
+    endDiv.style.display = 'block';
+    let html = `<p>遊戲結束！勝利方: ${winner === 'villagers' ? '村民' : '狼人'}</p>`;
+    html += '<ul>';
+    Object.values(players).forEach(p => {
+      html += `<li>${p.name} (${CONFIG.ROLE_NAMES[p.role] || p.role}) - ${p.alive ? '存活' : '死亡'}</li>`;
+    });
+    html += '</ul>';
+    endDiv.innerHTML = html;
+  } else {
+    alert(`遊戲結束！勝利方: ${winner === 'villagers' ? '村民' : '狼人'}`);
+  }
+}
+
 async function pollRoom() {
   if (!state.roomId || !state.playerId) return;
 
