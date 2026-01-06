@@ -403,6 +403,14 @@ async function leaveRoomSafe() {
 
 
 // ================= 顯示 =================
+// 預設頭像陣列（可以放多個，沒上傳頭像時隨機選）
+const DEFAULT_AVATARS = [
+  'https://via.placeholder.com/50?text=👤',
+  'https://via.placeholder.com/50?text=😀',
+  'https://via.placeholder.com/50?text=😎',
+  'https://via.placeholder.com/50?text=🤖'
+];
+
 function updatePlayerList(players) {
   const playerList = document.getElementById('playerList');
   playerList.innerHTML = '';
@@ -418,15 +426,18 @@ function updatePlayerList(players) {
     // 房主標記
     const hostMark = p.isHost ? ' 🏠' : '';
 
-    // 玩家自己角色圖示
+    // 玩家自己角色圖示，只顯示自己知道的
     const roleIcon = (p.id === state.playerId && p.role && roleImages[p.role])
       ? `<img src="${roleImages[p.role]}" class="role-icon" style="width:24px;height:24px;">`
       : '';
 
+    // 預設頭像
+    const avatar = p.avatar || DEFAULT_AVATARS[p.id.charCodeAt(0) % DEFAULT_AVATARS.length];
+
     const div = document.createElement('div');
     div.className = 'player-card';
     div.innerHTML = `
-      <img src="${p.avatar || 'https://via.placeholder.com/50'}" class="player-avatar">
+      <img src="${avatar}" class="player-avatar">
       <div class="player-info-wrapper" style="display:flex;gap:8px;align-items:center;">
         <div>${p.name}${hostMark}</div>${roleIcon}
       </div>
@@ -435,7 +446,10 @@ function updatePlayerList(players) {
 
     playerList.appendChild(div);
   });
+
+  // ✅ 移除 console.log，避免每次輪詢都打印
 }
+
 
 function updateChat(chatArray) {
   const chatBox = document.getElementById('chatBox');
