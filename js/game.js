@@ -318,7 +318,24 @@ async function pollRoom() {
     updatePlayerList(players);
     updateChat(result.chat || []);
 
-    // 更新遊戲階段 UI
+    // ----------- 房主開始遊戲按鈕 -----------
+    const startBtn = document.getElementById('startGameBtn');
+    if (me?.isHost && !result.phase?.startsWith('rolesAssigned') && !result.phase?.startsWith('night')) {
+      startBtn.style.display = 'inline-block';
+    } else {
+      startBtn.style.display = 'none';
+    }
+
+    startBtn.onclick = async () => {
+      startBtn.disabled = true; // 防止連點
+      try {
+        await gameAPI.assignRoles(state.roomId, state.playerId);
+      } catch (e) {
+        console.error('開始遊戲失敗', e);
+      }
+    };
+
+    // ----------- 更新遊戲階段 UI -----------
     const phase = result.phase;
     if (phase === 'rolesAssigned' || phase === 'night') showNightUI();
     if (phase === 'day') {
@@ -332,7 +349,6 @@ async function pollRoom() {
 
   } catch (e) {
     console.error('pollRoom 失敗', e);
-    // 不要直接踢回大廳
   }
 }
 
