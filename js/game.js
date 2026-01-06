@@ -343,22 +343,26 @@ async function pollRoom() {
       return;
     }
 
-    // ⭐ 全域保存玩家資料，方便 console 查看
     state.latestPlayers = result.players || {};
     const me = state.latestPlayers[state.playerId] || null;
     myRole = me?.role || null;
     document.getElementById('myRole').textContent = myRole ? CONFIG.ROLE_NAMES[myRole] || '?' : '?';
 
-    console.log('房間玩家列表:', state.latestPlayers); // ✅ 可以在 console 查看
+    // ✅ 只在第一次打印玩家列表
+    if (!state._playersLogged) {
+      console.log('房間玩家列表:', state.latestPlayers);
+      state._playersLogged = true;
+    }
 
     updatePlayerList(state.latestPlayers);
     updateChat(result.chat || []);
 
-    // ----------- 房主開始遊戲按鈕 -----------
-     ensureStartButton()
+    // 房主開始遊戲按鈕
+    ensureStartButton();
 
-    // ----------- 更新遊戲階段 UI -----------
+    // 更新遊戲階段 UI
     const phase = result.phase;
+    state.phase = phase; // 更新全域階段
     if (phase === 'rolesAssigned' || phase === 'night') showNightUI();
     else if (phase === 'day') {
       showDayUI();
@@ -373,6 +377,7 @@ async function pollRoom() {
     console.error('pollRoom 失敗', e);
   }
 }
+
 
 
 // 安全離開房間（不會因為輪詢錯誤被回大廳）
