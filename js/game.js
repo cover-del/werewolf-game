@@ -334,13 +334,36 @@ async function leaveRoom() { await gameAPI.leaveRoom(state.roomId, state.playerI
 
 // ================= 頭像上傳 =================
 
-// ===== changeMyAvatar（最終正確版）=====
+// ===== 上傳頭像 =====
+async function uploadAvatar(dataUrl, filename) {
+  try {
+    const res = await fetch(CONFIG.GS_WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'uploadAvatar', dataUrl, filename })
+    });
+
+    const json = await res.json();
+
+    if (!json.success || !json.data?.success) {
+      throw new Error(json.data?.error || json.error || '上傳失敗');
+    }
+
+    return json.data; // { success: true, url: '...' }
+
+  } catch(e) {
+    console.error('uploadAvatar 錯誤', e);
+    return { success: false, error: e.message };
+  }
+}
+
+// ===== changeMyAvatar =====
 function changeMyAvatar() {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/*';
 
-  input.onchange = async function () {
+  input.onchange = async function() {
     const file = input.files[0];
     if (!file) return;
 
@@ -350,37 +373,22 @@ function changeMyAvatar() {
       document.getElementById('uploadStatus').textContent = '讀取檔案中...';
     };
 
-    reader.onload = async function () {
+    reader.onload = async function() {
       document.getElementById('uploadStatus').textContent = '上傳中...';
 
       try {
-        // ✅ 一定是這個
-        const res = await gameAPI.uploadAvatar(reader.result, file.name);
-
-        /*
-          res 結構【固定】：
-          {
-            success: true,
-            data: {
-              success: true,
-              url: "https://script.google.com/macros/s/xxx/exec?action=avatar&id=xxx"
-            }
-          }
-        */
-
-        const avatarUrl = res?.data?.url;
-
-        if (res?.success && res?.data?.success && avatarUrl) {
-          document.getElementById('myAvatarImg').src = avatarUrl;
+        const data = await uploadAvatar(reader.result, file.name);
+        if (data?.success && data.url) {
+          document.getElementById('myAvatarImg').src = data.url;
           document.getElementById('uploadStatus').textContent = '上傳完成';
           alert('✅ 頭像已更新');
         } else {
-          console.warn('頭像上傳失敗', res);
+          console.warn('頭像上傳失敗', data);
           document.getElementById('uploadStatus').textContent = '上傳失敗';
-          alert('❌ 上傳失敗');
+          alert('❌ 上傳失敗：' + (data?.error || '未知錯誤'));
         }
 
-      } catch (e) {
+      } catch(e) {
         console.error(e);
         document.getElementById('uploadStatus').textContent = '上傳錯誤';
         alert('❌ 上傳錯誤：' + e.message);
@@ -397,7 +405,6 @@ function changeMyAvatar() {
 
   input.click();
 }
-
 
 
 
