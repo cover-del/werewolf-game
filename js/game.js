@@ -340,18 +340,26 @@ async function uploadAvatar(dataUrl, filename) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'uploadAvatar', dataUrl, filename })
     });
+
     const json = await res.json();
 
-    if (!json.success) throw new Error(json.error || '上傳失敗');
+    // 🔥 真正的結果在 json.data
+    if (!json.success || !json.data?.success) {
+      throw new Error(json.data?.error || json.error || '上傳失敗');
+    }
 
-    // ⚡ 直接回傳 url 字串
-    return { success: true, url: json.data.url };
+    // ✅ 正確拿 url
+    return {
+      success: true,
+      url: json.data.url
+    };
 
   } catch (e) {
     console.error('uploadAvatar 錯誤', e);
     return { success: false, error: e.message };
   }
 }
+
 
 
 // ===== changeMyAvatar =====
