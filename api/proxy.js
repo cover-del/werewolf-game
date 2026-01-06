@@ -1,3 +1,12 @@
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb', // ⭐ 關鍵，不然 base64 圖會死
+    },
+  },
+};
+
+
 // api/proxy.js
 export default async function handler(req, res) {
   // ===== CORS（一定要最前面）=====
