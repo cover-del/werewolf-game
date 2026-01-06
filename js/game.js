@@ -312,26 +312,16 @@ function ensureStartButton() {
   }
 
   const me = state.latestPlayers[state.playerId];
-  const aliveCount = Object.values(state.latestPlayers || {}).filter(p => p.alive).length;
-
-  if (me?.isHost && state.phase === 'waiting') {
+  if (me?.isHost) {
     startBtn.style.display = 'inline-block';
-    
-    if (aliveCount < 4) {
-      startBtn.title = '玩家不足（至少 4 人）';
-      startBtn.style.opacity = 0.7; // 視覺提示
-    } else {
-      startBtn.title = '';
-      startBtn.style.opacity = 1;
-    }
-
-    // ✅ 保證可以點
+    startBtn.style.opacity = 1;
     startBtn.style.pointerEvents = 'auto';
+    startBtn.title = '點擊開始遊戲（後端會檢查玩家數）';
   } else {
     startBtn.style.display = 'none';
+    return;
   }
 
-  // 永遠可點，按下去由後端決定是否能開始
   startBtn.onclick = async () => {
     try {
       const result = await gameAPI.assignRoles(state.roomId, state.playerId);
