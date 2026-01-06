@@ -347,35 +347,37 @@ function changeMyAvatar() {
       document.getElementById('uploadStatus').textContent = '讀取檔案中...';
     };
 
-    reader.onload = async function () {
-      document.getElementById('uploadStatus').textContent = '上傳中...';
-
-      try {
-        // ✅ 清掉空格和換行
-        const cleanDataUrl = reader.result.replace(/\s/g, '');
-
-        // ✅ 上傳
-        const res = await gameAPI.uploadAvatar(cleanDataUrl, file.name);
-
-        // 取 URL
-        const avatarUrl = res?.url || res?.data?.url || null;
-
-        if (res?.success && typeof avatarUrl === 'string') {
-          document.getElementById('myAvatarImg').src = avatarUrl;
-          document.getElementById('uploadStatus').textContent = '上傳完成';
-          alert('✅ 頭像已更新');
-        } else {
-          console.warn('頭像上傳失敗', res);
-          document.getElementById('uploadStatus').textContent = '上傳失敗';
-          alert('❌ 上傳失敗：' + (res?.error || '未知錯誤'));
-        }
-
-      } catch (e) {
-        console.error('uploadAvatar 錯誤', e);
-        document.getElementById('uploadStatus').textContent = '上傳錯誤';
-        alert('❌ 上傳錯誤：' + e.message);
+   reader.onload = async function () {
+    document.getElementById('uploadStatus').textContent = '上傳中...';
+  
+    try {
+      const fileType = file.type;
+      if (!fileType.match(/^image\/(png|jpeg|jpg)$/)) {
+        alert('❌ 只允許上傳 PNG 或 JPG 檔案');
+        document.getElementById('uploadStatus').textContent = '檔案格式錯誤';
+        return;
       }
-    };
+  
+      const res = await gameAPI.uploadAvatar(reader.result, file.name);
+  
+      const avatarUrl = res?.url || res?.data?.url || null;
+  
+      if (res?.success && typeof avatarUrl === 'string') {
+        document.getElementById('myAvatarImg').src = avatarUrl;
+        document.getElementById('uploadStatus').textContent = '上傳完成';
+        alert('✅ 頭像已更新');
+      } else {
+        console.warn('頭像上傳失敗', res);
+        document.getElementById('uploadStatus').textContent = '上傳失敗';
+        alert('❌ 上傳失敗：' + (res?.error || '未知錯誤'));
+      }
+  
+    } catch (e) {
+      console.error('uploadAvatar 錯誤', e);
+      document.getElementById('uploadStatus').textContent = '上傳錯誤';
+      alert('❌ 上傳錯誤：' + e.message);
+    }
+  };
 
     reader.onerror = () => {
       document.getElementById('uploadStatus').textContent = '讀取失敗';
