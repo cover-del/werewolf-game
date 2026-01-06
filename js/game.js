@@ -335,27 +335,35 @@ async function leaveRoom() { await gameAPI.leaveRoom(state.roomId, state.playerI
 // ================= 頭像上傳 =================
 
 // ===== 上傳頭像 =====
-async function uploadAvatar(dataUrl, filename) {
-  try {
-    const res = await fetch(CONFIG.GS_WEB_APP_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'uploadAvatar', dataUrl, filename })
-    });
-
-    const json = await res.json();
-
-    if (!json.success || !json.data?.url) {
-      throw new Error(json.error || '上傳失敗');
+async function uploadAvatarFile(file) {
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const dataUrl = e.target.result;
+    try {
+      const res = await fetch(GS_WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'uploadAvatar',
+          dataUrl: dataUrl,
+          filename: file.name
+        }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      const result = await res.json();
+      if(result.success && result.data.url){
+        document.getElementById('avatarPreview').src = result.data.url;
+      } else {
+        console.error('頭像上傳失敗', result);
+      }
+    } catch(err) {
+      console.error('uploadAvatar 錯誤', err);
     }
-
-    return { success: true, url: json.data.url };
-
-  } catch (e) {
-    console.error('uploadAvatar 錯誤', e);
-    return { success: false, error: e.message };
-  }
+  };
+  reader.readAsDataURL(file);
 }
+
 
 /**
  * 選擇檔案並上傳
