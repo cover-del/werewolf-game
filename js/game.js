@@ -332,37 +332,9 @@ async function leaveRoom() { await gameAPI.leaveRoom(state.roomId, state.playerI
 
 
 
-// ===== uploadAvatar（呼叫 GAS） =====
-async function uploadAvatar(dataUrl, filename) {
-  try {
-    const res = await fetch(CONFIG.GS_WEB_APP_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'uploadAvatar', dataUrl, filename })
-    });
+// ================= 頭像上傳 =================
 
-    const json = await res.json();
-
-    // 🔥 真正的結果在 json.data
-    if (!json.success || !json.data?.success) {
-      throw new Error(json.data?.error || json.error || '上傳失敗');
-    }
-
-    // ✅ 正確拿 url
-    return {
-      success: true,
-      url: json.data.url
-    };
-
-  } catch (e) {
-    console.error('uploadAvatar 錯誤', e);
-    return { success: false, error: e.message };
-  }
-}
-
-
-
-// ===== changeMyAvatar =====
+// ===== changeMyAvatar（最終正確版）=====
 function changeMyAvatar() {
   const input = document.createElement('input');
   input.type = 'file';
@@ -373,19 +345,32 @@ function changeMyAvatar() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onloadstart = () => document.getElementById('uploadStatus').textContent = '讀取檔案中...';
+
+    reader.onloadstart = () => {
+      document.getElementById('uploadStatus').textContent = '讀取檔案中...';
+    };
 
     reader.onload = async function () {
       document.getElementById('uploadStatus').textContent = '上傳中...';
 
       try {
+        // ✅ 一定是這個
         const res = await gameAPI.uploadAvatar(reader.result, file.name);
 
-        // 🔥 真正的 payload 在 res.data
-        const data = res?.data;
-        const avatarUrl = data?.url;
-        
-        if (res?.success && avatarUrl) {
+        /*
+          res 結構【固定】：
+          {
+            success: true,
+            data: {
+              success: true,
+              url: "https://script.google.com/macros/s/xxx/exec?action=avatar&id=xxx"
+            }
+          }
+        */
+
+        const avatarUrl = res?.data?.url;
+
+        if (res?.success && res?.data?.success && avatarUrl) {
           document.getElementById('myAvatarImg').src = avatarUrl;
           document.getElementById('uploadStatus').textContent = '上傳完成';
           alert('✅ 頭像已更新');
