@@ -335,11 +335,17 @@ async function leaveRoom() { await gameAPI.leaveRoom(state.roomId, state.playerI
 // ================= 頭像上傳 =================
 
 // ===== 上傳頭像 =====
+// ===== 上傳頭像 (帶提示版) =====
 async function uploadAvatarFile(file) {
   const reader = new FileReader();
+
   reader.onload = async function(e) {
     const dataUrl = e.target.result;
+    // 顯示讀取完成提示
+    document.getElementById('uploadStatus').textContent = '📤 上傳中...';
+
     try {
+      // 發送 POST 到 GAS Web App
       const res = await fetch(GS_WEB_APP_URL, {
         method: 'POST',
         body: JSON.stringify({
@@ -351,60 +357,57 @@ async function uploadAvatarFile(file) {
           'Content-Type': 'application/json'
         }
       });
+
       const result = await res.json();
-      if(result.success && result.data.url){
-        document.getElementById('avatarPreview').src = result.data.url;
+
+      if (result.success && result.data.url) {
+        // 成功顯示新頭像
+        document.getElementById('myAvatarImg').src = result.data.url;
+        document.getElementById('uploadStatus').textContent = '✅ 上傳完成';
+        alert('頭像已更新！');
       } else {
         console.error('頭像上傳失敗', result);
+        document.getElementById('uploadStatus').textContent = '❌ 上傳失敗';
+        alert('上傳失敗：' + (result.error || '未知錯誤'));
       }
+
     } catch(err) {
       console.error('uploadAvatar 錯誤', err);
+      document.getElementById('uploadStatus').textContent = '❌ 上傳錯誤';
+      alert('上傳出現錯誤：' + err.message);
     }
   };
+
+  reader.onerror = () => {
+    document.getElementById('uploadStatus').textContent = '❌ 讀取失敗';
+    alert('讀取檔案失敗');
+  };
+
   reader.readAsDataURL(file);
 }
 
-
 /**
- * 選擇檔案並上傳
+ * 選擇檔案並觸發上傳
  */
 function changeMyAvatar() {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/*';
 
-  input.onchange = async function () {
+  input.onchange = function () {
     const file = input.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadstart = () => document.getElementById('uploadStatus').textContent = '讀取檔案中...';
+    // 顯示讀取提示
+    document.getElementById('uploadStatus').textContent = '📖 讀取檔案中...';
 
-    reader.onload = async function () {
-      document.getElementById('uploadStatus').textContent = '上傳中...';
-
-      const res = await uploadAvatar(reader.result, file.name);
-      if (res.success && res.url) {
-        document.getElementById('myAvatarImg').src = res.url;
-        document.getElementById('uploadStatus').textContent = '上傳完成';
-        alert('✅ 頭像已更新');
-      } else {
-        console.warn('頭像上傳失敗', res);
-        document.getElementById('uploadStatus').textContent = '上傳失敗';
-        alert('❌ 上傳失敗：' + res.error);
-      }
-    };
-
-    reader.onerror = () => {
-      document.getElementById('uploadStatus').textContent = '讀取失敗';
-      alert('❌ 讀取檔案失敗');
-    };
-
-    reader.readAsDataURL(file);
+    // 呼叫 uploadAvatarFile 處理
+    uploadAvatarFile(file);
   };
 
   input.click();
 }
+
 
 
 // ================= 登出 =================
