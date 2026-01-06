@@ -13,6 +13,7 @@ let myRole = null;
 let pollTimer = null;
 let inRoom = false;
 let roomFailCount = 0;
+let resolvingDay = false;
 
 // ================= 初始化 =================
 // ================= 初始化 =================
@@ -243,7 +244,7 @@ function showNightUI() {
     players.forEach(p => {
       const btn = document.createElement('button');
       btn.textContent = p.name;
-      btn.onclick = () => submitNightAction('protect', p.id);
+      btn.onclick = () => submitNightAction('save', p.id);
       nightActionArea.appendChild(btn);
     });
   } else {
@@ -260,24 +261,37 @@ function showDayUI() {
   const voteArea = document.getElementById('voteArea');
   voteArea.innerHTML = '';
 
-  const players = Object.values(state.latestPlayers || {}).filter(p => p.alive && p.id !== state.playerId);
+  const me = state.latestPlayers[state.playerId];
+  if (!me || !me.alive) {
+    voteArea.innerHTML = '<p>你已死亡，無法投票</p>';
+    return;
+  }
 
-  if (players.length === 0) return voteArea.innerHTML = '<p>無人可投票</p>';
+  if (me.hasVoted) {
+    voteArea.innerHTML = '<p>你已投票，請等待其他玩家</p>';
+    return;
+  }
+
+  const players = Object.values(state.latestPlayers)
+    .filter(p => p.alive && p.id !== state.playerId);
+
+  if (players.length === 0) {
+    voteArea.innerHTML = '<p>無人可投票</p>';
+    return;
+  }
 
   voteArea.innerHTML = '<p>投票選擇要處決的玩家:</p>';
 
   players.forEach(p => {
     const btn = document.createElement('button');
     btn.textContent = p.name;
-    btn.disabled = state.myVote === p.id;
-    btn.onclick = () => {
-      state.myVote = p.id;
-      submitMyVote();
-      showDayUI(); // 更新按鈕狀態
+    btn.onclick = async () => {
+      await submitMyVote(p.id);
     };
     voteArea.appendChild(btn);
   });
 }
+
 
 function showEndUI(winner, players) {
   clearInterval(pollTimer);
@@ -335,6 +349,46 @@ function ensureStartButton() {
   };
 }
 
+function ensureResolveNightButton() {
+  let nightBtn = document.getElementById('resolveNightBtn');
+  const container = document.querySelector('.game-area .card'); 
+  if (!container) return console.warn('.game-area .card 不存在');
+
+  if (!nightBtn) {
+    nightBtn = document.createElement('button');
+    nightBtn.id = 'resolveNightBtn';
+    nightBtn.textContent = '結束夜晚';
+    nightBtn.className = 'btn-primary';
+    nightBtn.style.display = 'none'; // 預設隱藏
+    container.prepend(nightBtn);
+  }
+
+  const me = state.latestPlayers[state.playerId];
+  if (state.phase === 'night' && me?.isHost) {
+    nightBtn.style.display = 'inline-block';
+    nightBtn.style.opacity = 1;
+    nightBtn.style.pointerEvents = 'auto';
+    nightBtn.title = '點擊結束夜晚';
+  } else {
+    nightBtn.style.display = 'none';
+    return;
+  }
+
+  nightBtn.onclick = async () => {
+    nightBtn.disabled = true;
+    nightBtn.textContent = '結算中...';
+    try {
+      await resolveNight();
+    } catch (e) {
+      console.error('resolveNight 失敗', e);
+      alert('夜晚結算失敗：' + e.message);
+    } finally {
+      nightBtn.disabled = false;
+      nightBtn.textContent = '結束夜晚';
+    }
+  };
+}
+
 
 async function pollRoom() {
   if (!state.roomId || !state.playerId) return;
@@ -368,11 +422,25 @@ async function pollRoom() {
     // 更新遊戲階段 UI
     const phase = result.phase;
     state.phase = phase; // 更新全域階段
-    if (phase === 'rolesAssigned' || phase === 'night') showNightUI();
-    else if (phase === 'day') {
-      showDayUI();
-      if (Object.values(state.latestPlayers).every(p => !p.alive || p.hasVoted)) await resolveVotes();
+    if (phase === 'rolesAssigned' || phase === 'night') {
+      resolvingDay = false; // ⭐ 重置白天結算旗標
+      showNightUI();
+      ensureResolveNightButton(); // ⭐ 新增：房主夜晚按鈕
     } 
+
+    else if (phase === 'day') {
+     showDayUI();
+   
+     const me = state.latestPlayers[state.playerId];
+     const alivePlayers = Object.values(state.latestPlayers).filter(p => p.alive);
+     const allVoted = alivePlayers.every(p => p.hasVoted);
+   
+     if (allVoted && me?.isHost && !resolvingDay) {
+       resolvingDay = true;
+       await resolveVotes();
+     }
+   } 
+
     else if (phase === 'ended') {
       showEndUI(result.winner, state.latestPlayers);
       clearInterval(pollTimer);
@@ -419,7 +487,7 @@ const DEFAULT_AVATARS = ['img/roles/像素1.png'];
 function updatePlayerList(players) {
   const playerList = document.getElementById('playerList');
   playerList.innerHTML = '';
-
+  const votedMark = p.hasVoted ? ' 🗳️' : '';
   const roleImages = {
     werewolf: 'img/roles/werewolf.png',
     seer: 'img/roles/seer.png',
@@ -470,7 +538,15 @@ function updateChat(chatArray) {
 
 // ================= 夜晚 / 投票 / 角色 =================
 async function submitNightAction(type, targetId) { await gameAPI.submitNightAction(state.roomId, state.playerId, { type, targetId }); }
-async function submitMyVote() { if (!state.myVote) return alert('請選擇投票對象'); await gameAPI.submitVote(state.roomId, state.playerId, state.myVote); }
+async function submitMyVote(targetId) {
+  try {
+    await gameAPI.submitVote(state.roomId, state.playerId, targetId);
+  } catch (e) {
+    alert('投票失敗');
+    console.error(e);
+  }
+}
+
 async function assignRoles() { await gameAPI.assignRoles(state.roomId, state.playerId); }
 async function resolveNight() { try { await gameAPI.resolveNight(state.roomId, state.playerId); } catch(e){} }
 async function resolveVotes() { try { await gameAPI.resolveVotes(state.roomId, state.playerId); } catch(e){} }
