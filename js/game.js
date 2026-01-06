@@ -313,8 +313,8 @@ function ensureStartButton() {
 
   const me = state.latestPlayers[state.playerId];
 
-  // ⭐ 寬鬆判斷：只要房主且遊戲尚未開始就顯示
-  const waitingPhases = ['waiting', undefined, null, '']; // API 可能沒設階段
+  // ⭐ 房主且階段是 lobby → 顯示開始遊戲按鈕
+  const waitingPhases = ['waiting', 'lobby']; 
   if (me?.isHost && waitingPhases.includes(state.phase)) {
     startBtn.style.display = 'inline-block';
   } else {
@@ -331,7 +331,6 @@ function ensureStartButton() {
     }
   };
 }
-
 
 
 async function pollRoom() {
