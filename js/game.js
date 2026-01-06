@@ -349,9 +349,10 @@ function changeMyAvatar() {
 
     reader.onload = async function () {
       document.getElementById('uploadStatus').textContent = '上傳中...';
+    
       try {
-        // 只取純 base64
-        const base64Data = reader.result.split(',')[1]; // 去掉 data:image/png;base64,
+        // 去掉 Data URL 前綴
+        const base64Data = reader.result.split(',')[1];
     
         const res = await gameAPI.uploadAvatar(base64Data, file.name);
     
@@ -366,6 +367,7 @@ function changeMyAvatar() {
           document.getElementById('uploadStatus').textContent = '上傳失敗';
           alert('❌ 上傳失敗：' + (res?.error || '未知錯誤'));
         }
+    
       } catch (e) {
         console.error(e);
         document.getElementById('uploadStatus').textContent = '上傳錯誤';
