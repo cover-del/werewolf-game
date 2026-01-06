@@ -303,24 +303,36 @@ async function pollRoom() {
 
   try {
     const res = await gameAPI.getRoomState(state.roomId, state.playerId);
-    const result = res?.data || res; // ✅ 就是你問的這行
+    const result = res?.data || res;
 
     if (!result || !result.id) {
       console.warn('房間暫時不存在，稍後重試', state.roomId);
       return;
     }
 
-    const players = result.players || {};
-    const me = players[state.playerId] || null;
+    // ⭐ 全域保存玩家資料，方便 console 查看
+    state.latestPlayers = result.players || {};
+    const me = state.latestPlayers[state.playerId] || null;
     myRole = me?.role || null;
     document.getElementById('myRole').textContent = myRole ? CONFIG.ROLE_NAMES[myRole] || '?' : '?';
 
-    updatePlayerList(players);
+    console.log('房間玩家列表:', state.latestPlayers); // ✅ 可以在 console 查看
+
+    updatePlayerList(state.latestPlayers);
     updateChat(result.chat || []);
 
     // ----------- 房主開始遊戲按鈕 -----------
-    const startBtn = document.getElementById('startGameBtn');
-    if (me?.isHost && !result.phase?.startsWith('rolesAssigned') && !result.phase?.startsWith('night')) {
+    let startBtn = document.getElementById('startGameBtn');
+    if (!startBtn) {
+      // 如果 DOM 裡沒有，就動態建立一個
+      startBtn = document.createElement('button');
+      startBtn.id = 'startGameBtn';
+      startBtn.textContent = '開始遊戲';
+      startBtn.className = 'btn-primary';
+      document.querySelector('.game-area .card').prepend(startBtn);
+    }
+
+    if (me?.isHost && result.phase === 'waiting') {
       startBtn.style.display = 'inline-block';
     } else {
       startBtn.style.display = 'none';
@@ -332,18 +344,19 @@ async function pollRoom() {
         await gameAPI.assignRoles(state.roomId, state.playerId);
       } catch (e) {
         console.error('開始遊戲失敗', e);
+        startBtn.disabled = false;
       }
     };
 
     // ----------- 更新遊戲階段 UI -----------
     const phase = result.phase;
     if (phase === 'rolesAssigned' || phase === 'night') showNightUI();
-    if (phase === 'day') {
+    else if (phase === 'day') {
       showDayUI();
-      if (Object.values(players).every(p => !p.alive || p.hasVoted)) await resolveVotes();
-    }
-    if (phase === 'ended') {
-      showEndUI(result.winner, players);
+      if (Object.values(state.latestPlayers).every(p => !p.alive || p.hasVoted)) await resolveVotes();
+    } 
+    else if (phase === 'ended') {
+      showEndUI(result.winner, state.latestPlayers);
       clearInterval(pollTimer);
     }
 
@@ -384,18 +397,33 @@ async function leaveRoomSafe() {
 function updatePlayerList(players) {
   const playerList = document.getElementById('playerList');
   playerList.innerHTML = '';
-  const roleImages = { werewolf:'img/roles/werewolf.png', seer:'img/roles/seer.png', doctor:'img/roles/doctor.png', villager:'img/roles/villager.png' };
+
+  const roleImages = {
+    werewolf: 'img/roles/werewolf.png',
+    seer: 'img/roles/seer.png',
+    doctor: 'img/roles/doctor.png',
+    villager: 'img/roles/villager.png'
+  };
+
   Object.values(players).forEach(p => {
-    const roleIcon = (p.id === state.playerId && p.role && roleImages[p.role]) ? `<img src="${roleImages[p.role]}" class="role-icon" style="width:24px;height:24px;">` : '';
+    // 房主標記
+    const hostMark = p.isHost ? ' 🏠' : '';
+
+    // 玩家自己角色圖示
+    const roleIcon = (p.id === state.playerId && p.role && roleImages[p.role])
+      ? `<img src="${roleImages[p.role]}" class="role-icon" style="width:24px;height:24px;">`
+      : '';
+
     const div = document.createElement('div');
     div.className = 'player-card';
     div.innerHTML = `
       <img src="${p.avatar || 'https://via.placeholder.com/50'}" class="player-avatar">
-      <div class="player-info-wrapper" style="display:flex;gap:8px;">
-        <div>${p.name}</div>${roleIcon}
+      <div class="player-info-wrapper" style="display:flex;gap:8px;align-items:center;">
+        <div>${p.name}${hostMark}</div>${roleIcon}
       </div>
       <div>${p.alive ? '🟢 存活' : '⚫ 死亡'}</div>
     `;
+
     playerList.appendChild(div);
   });
 }
