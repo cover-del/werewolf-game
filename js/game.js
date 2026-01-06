@@ -332,7 +332,7 @@ async function leaveRoom() { await gameAPI.leaveRoom(state.roomId, state.playerI
 
 
 
-// ===== 安全封裝：呼叫後端並取得字串 URL =====
+// ===== uploadAvatar（呼叫 GAS） =====
 async function uploadAvatar(dataUrl, filename) {
   try {
     const res = await fetch(CONFIG.GS_WEB_APP_URL, {
@@ -341,16 +341,19 @@ async function uploadAvatar(dataUrl, filename) {
       body: JSON.stringify({ action: 'uploadAvatar', dataUrl, filename })
     });
     const json = await res.json();
+
     if (!json.success) throw new Error(json.error || '上傳失敗');
-    return json; // ⚡ json.url 就是字串
+
+    // ⚡ json.data.url 就是最終 URL
+    return json.data;
+
   } catch (e) {
     console.error('uploadAvatar 錯誤', e);
     return { success: false, error: e.message };
   }
 }
 
-
-// ===== 使用上面的安全封裝的 changeMyAvatar 實作（保留提示） =====
+// ===== changeMyAvatar =====
 function changeMyAvatar() {
   const input = document.createElement('input');
   input.type = 'file';
@@ -361,44 +364,31 @@ function changeMyAvatar() {
     if (!file) return;
 
     const reader = new FileReader();
-
-    reader.onloadstart = () => {
-      document.getElementById('uploadStatus').textContent = '讀取檔案中...';
-    };
-
-    reader.onprogress = (e) => {
-      if (e.lengthComputable) {
-        const percent = Math.round((e.loaded / e.total) * 100);
-        document.getElementById('uploadStatus').textContent = `讀取檔案 ${percent}%`;
-      }
-    };
+    reader.onloadstart = () => document.getElementById('uploadStatus').textContent = '讀取檔案中...';
 
     reader.onload = async function () {
       document.getElementById('uploadStatus').textContent = '上傳中...';
-    
+
       try {
-        const res = await gameAPI.uploadAvatar(reader.result, file.name);
-        
-        const data = res?.data; // 注意這裡
+        const data = await uploadAvatar(reader.result, file.name); // ⚡ 直接拿 data
         const avatarUrl = data?.url;
-    
+
         if (data?.success && avatarUrl) {
           document.getElementById('myAvatarImg').src = avatarUrl;
           document.getElementById('uploadStatus').textContent = '上傳完成';
           alert('✅ 頭像已更新');
         } else {
-          console.warn('頭像上傳失敗', res);
+          console.warn('頭像上傳失敗', data);
           document.getElementById('uploadStatus').textContent = '上傳失敗';
           alert('❌ 上傳失敗：' + (data?.error || '未知錯誤'));
         }
-    
+
       } catch (e) {
         console.error(e);
         document.getElementById('uploadStatus').textContent = '上傳錯誤';
         alert('❌ 上傳錯誤：' + e.message);
       }
     };
-
 
     reader.onerror = () => {
       document.getElementById('uploadStatus').textContent = '讀取失敗';
@@ -410,7 +400,6 @@ function changeMyAvatar() {
 
   input.click();
 }
-
 
 
 
