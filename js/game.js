@@ -487,7 +487,7 @@ const DEFAULT_AVATARS = ['img/roles/像素1.png'];
 function updatePlayerList(players) {
   const playerList = document.getElementById('playerList');
   playerList.innerHTML = '';
-  const votedMark = p.hasVoted ? ' 🗳️' : '';
+
   const roleImages = {
     werewolf: 'img/roles/werewolf.png',
     seer: 'img/roles/seer.png',
@@ -498,6 +498,9 @@ function updatePlayerList(players) {
   Object.values(players).forEach(p => {
     // 房主標記
     const hostMark = p.isHost ? ' 🏠' : '';
+    
+    // 投票標記
+    const votedMark = p.hasVoted ? ' 🗳️' : '';
 
     // 玩家自己角色圖示，只顯示自己知道的
     const roleIcon = (p.id === state.playerId && p.role && roleImages[p.role])
@@ -512,16 +515,15 @@ function updatePlayerList(players) {
     div.innerHTML = `
       <img src="${avatar}" class="player-avatar">
       <div class="player-info-wrapper" style="display:flex;gap:8px;align-items:center;">
-        <div>${p.name}${hostMark}</div>${roleIcon}
+        <div>${p.name}${hostMark}${votedMark}</div>${roleIcon}
       </div>
       <div>${p.alive ? '🟢 存活' : '⚫ 死亡'}</div>
     `;
 
     playerList.appendChild(div);
   });
-
-  // ✅ 移除 console.log，避免每次輪詢都打印
 }
+
 
 
 function updateChat(chatArray) {
