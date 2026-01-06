@@ -353,15 +353,20 @@ function changeMyAvatar() {
       try {
         const res = await gameAPI.uploadAvatar(reader.result, file.name);
 
-        if (res?.success && typeof res.url === 'string') {
-          document.getElementById('myAvatarImg').src = res.url;
-          document.getElementById('uploadStatus').textContent = '上傳完成';
-          alert('✅ 頭像已更新');
-        } else {
-          console.warn('頭像上傳失敗', res);
-          document.getElementById('uploadStatus').textContent = '上傳失敗';
-          alert('❌ 上傳失敗：' + (res?.error || '未知錯誤'));
-        }
+       const avatarUrl =
+        res?.url ||
+        res?.data?.url ||
+        null;
+      
+      if (res?.success && typeof avatarUrl === 'string') {
+        document.getElementById('myAvatarImg').src = avatarUrl;
+        document.getElementById('uploadStatus').textContent = '上傳完成';
+        alert('✅ 頭像已更新');
+      } else {
+        console.warn('頭像上傳失敗', res);
+        document.getElementById('uploadStatus').textContent = '上傳失敗';
+        alert('❌ 上傳失敗：' + (res?.error || '未知錯誤'));
+      }
 
       } catch (e) {
         console.error(e);
