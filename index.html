@@ -7,6 +7,12 @@
   <base href="./">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/game.css">
+  <style>
+    .selected { border: 2px solid #f39c12 !important; }
+    .chat-box { max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 8px; }
+    .player-card { display: flex; justify-content: space-between; align-items: center; padding: 6px; border-bottom: 1px solid #eee; }
+    .role-icon { width: 24px; height: 24px; }
+  </style>
 </head>
 <body>
 
@@ -14,13 +20,13 @@
   <!-- 頁頭 -->
   <div class="header">
     <h1>🐺 線上狼人殺</h1>
-      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
-        <img id="myAvatarImg" src="https://via.placeholder.com/50" alt="我的頭像" style="width:50px;height:50px;border-radius:50%;">
-        <span class="player-info">玩家: <strong id="playerName"></strong></span>
-        <button class="btn-info" id="playerInfoBtn">我的資訊</button>
-        <button class="btn-danger" id="logoutBtn">登出</button>
-      </div>
-      <div id="uploadStatus" style="color:#555;margin-top:5px;">未上傳</div>
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+      <img id="myAvatarImg" src="https://via.placeholder.com/50" alt="我的頭像" style="width:50px;height:50px;border-radius:50%;">
+      <span class="player-info">玩家: <strong id="playerName"></strong></span>
+      <button class="btn-info" id="playerInfoBtn">我的資訊</button>
+      <button class="btn-danger" id="logoutBtn">登出</button>
+    </div>
+    <div id="uploadStatus" style="color:#555;margin-top:5px;">未上傳</div>
   </div>
 
   <!-- 大廳區域 -->
