@@ -2,7 +2,7 @@
  * 狼人殺遊戲 - 主遊戲邏輯（整理版 ES2018 Safe）
  */
 console.log('game.js start');
-
+ 
 let state = {
   roomId: null,
   playerId: null,
