@@ -324,11 +324,14 @@ function ensureStartButton() {
       startBtn.title = '';
       startBtn.style.opacity = 1;
     }
+
+    // ✅ 保證可以點
+    startBtn.style.pointerEvents = 'auto';
   } else {
     startBtn.style.display = 'none';
   }
 
-  // 按鈕事件：永遠可點，錯誤由後端處理
+  // 永遠可點，按下去由後端決定是否能開始
   startBtn.onclick = async () => {
     try {
       const result = await gameAPI.assignRoles(state.roomId, state.playerId);
