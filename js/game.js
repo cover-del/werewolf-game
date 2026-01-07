@@ -263,38 +263,55 @@ function showNightUI() {
 
   const nightActionArea = document.getElementById('nightActionArea');
   nightActionArea.innerHTML = '';
-  if (!myRole) return;
 
-  const players = Object.values(state.latestPlayers || {}).filter(p => p.alive && p.id !== state.playerId);
+  const me = state.latestPlayers[state.playerId];
+  if (!me || !me.alive || !myRole) {
+    nightActionArea.innerHTML = '<p>等待夜晚結束...</p>';
+    return;
+  }
+
+  const players = Object.values(state.latestPlayers).filter(p => p.alive && p.id !== state.playerId);
+  if (players.length === 0) {
+    nightActionArea.innerHTML = '<p>沒有其他玩家</p>';
+    return;
+  }
+
+  // 清除舊按鈕，重新生成
+  nightActionArea.innerHTML = '';
+  let titleText = '';
 
   if (myRole === 'werewolf') {
-    nightActionArea.innerHTML = '<p>選擇殺人目標:</p>';
-    players.forEach(p => {
-      const btn = document.createElement('button');
-      btn.textContent = p.name;
-      btn.onclick = () => submitNightKill(p.id);
-      nightActionArea.appendChild(btn);
-    });
+    titleText = '選擇殺人目標:';
   } else if (myRole === 'seer') {
-    nightActionArea.innerHTML = '<p>選擇查驗目標:</p>';
-    players.forEach(p => {
-      const btn = document.createElement('button');
-      btn.textContent = p.name;
-      btn.onclick = () => submitNightCheck(p.id);
-      nightActionArea.appendChild(btn);
-    });
+    titleText = '選擇查驗目標:';
   } else if (myRole === 'doctor') {
-    nightActionArea.innerHTML = '<p>選擇守護目標:</p>';
-    players.forEach(p => {
-      const btn = document.createElement('button');
-      btn.textContent = p.name;
-      btn.onclick = () => submitNightSave(p.id);
-      nightActionArea.appendChild(btn);
-    });
+    titleText = '選擇守護目標:';
   } else {
     nightActionArea.innerHTML = '<p>等待夜晚結束...</p>';
+    return;
   }
+
+  nightActionArea.innerHTML = `<p>${titleText}</p>`;
+
+  players.forEach(p => {
+    const btn = document.createElement('button');
+    btn.textContent = p.name;
+
+    btn.onclick = async () => {
+      if (!state.roomId || !state.playerId) return;
+      try {
+        if (myRole === 'werewolf') await submitNightKill(p.id);
+        else if (myRole === 'seer') await submitNightCheck(p.id);
+        else if (myRole === 'doctor') await submitNightSave(p.id);
+      } catch (e) {
+        alert('夜晚行動失敗: ' + e.message);
+      }
+    };
+
+    nightActionArea.appendChild(btn);
+  });
 }
+
 
 
 function showDayUI() {
