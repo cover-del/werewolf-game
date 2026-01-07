@@ -518,7 +518,7 @@ async function leaveRoomSafe() {
 
 // ================= 顯示 =================
 // 預設頭像陣列（可以放多個，沒上傳頭像時隨機選）
-const DEFAULT_AVATARS = ['img/roles/像素1.png'];
+const DEFAULT_AVATARS = ['img/roles/像素1.png','img/roles/螢幕擷取畫面 2025-11-11 054212.png','img/roles/Copilot_20251117_205428.png'];
 
 function updatePlayerList(players) {
   const playerList = document.getElementById('playerList');
