@@ -130,37 +130,24 @@ window.lastRoomIds = window.lastRoomIds || []; // 記錄上一次房間 ID
 
 async function refreshRoomList() {
   const roomList = document.getElementById('roomList');
+  if (!roomList) return console.warn('roomList 容器不存在');
 
-  // 初始化全域 lastRoomIds
-  window.lastRoomIds = window.lastRoomIds || [];
-
-  // 第一次載入顯示載入中
-  if (window.lastRoomIds.length === 0) {
-    roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">載入中...</div>';
-  }
+  roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">載入中...</div>';
 
   try {
     const res = await gameAPI.listRooms();
-    const rooms = res?.data || [];
+    console.log('listRooms result:', res);
 
-    // 取得房間 ID 陣列
-    const newRoomIds = rooms.map(r => r.id);
+    // ✅ 修正：直接用 res（因為你的 API 回傳就是陣列）
+    const rooms = Array.isArray(res) ? res : (res?.data || []);
+    console.log('rooms array:', rooms);
 
-    // 房間列表沒變就不用更新
-    if (JSON.stringify(window.lastRoomIds) === JSON.stringify(newRoomIds)) return;
-
-    // 更新上一次房間 ID
-    window.lastRoomIds = newRoomIds;
-
-    // 清空房間列表
-    roomList.innerHTML = '';
-
-    if (rooms.length === 0) {
+    if (!rooms.length) {
       roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">目前沒有房間</div>';
       return;
     }
 
-    // 建立房間 DOM
+    roomList.innerHTML = '';
     rooms.forEach(room => {
       const div = document.createElement('div');
       div.className = 'room-item';
