@@ -213,8 +213,11 @@ async function enterGame(roomId, playerId) {
 async function submitNightKill(targetId) {
   if (!state.roomId || !state.playerId || !targetId) return;
   try {
-    const actionStr = `kill:${targetId}`;
-    await gameAPI.submitNightAction(state.roomId, state.playerId, actionStr);
+    await gameAPI.submitNightAction(
+      state.roomId,
+      state.playerId,
+      { type: 'kill', targetId }
+    );
   } catch (e) {
     console.error('submitNightKill 失敗', e);
     alert('夜晚行動失敗: ' + e.message);
@@ -224,8 +227,11 @@ async function submitNightKill(targetId) {
 async function submitNightCheck(targetId) {
   if (!state.roomId || !state.playerId || !targetId) return;
   try {
-    const actionStr = `check:${targetId}`;
-    await gameAPI.submitNightAction(state.roomId, state.playerId, actionStr);
+    await gameAPI.submitNightAction(
+      state.roomId,
+      state.playerId,
+      { type: 'check', targetId }
+    );
   } catch (e) {
     console.error('submitNightCheck 失敗', e);
     alert('夜晚行動失敗: ' + e.message);
@@ -235,13 +241,17 @@ async function submitNightCheck(targetId) {
 async function submitNightSave(targetId) {
   if (!state.roomId || !state.playerId || !targetId) return;
   try {
-    const actionStr = `save:${targetId}`;
-    await gameAPI.submitNightAction(state.roomId, state.playerId, actionStr);
+    await gameAPI.submitNightAction(
+      state.roomId,
+      state.playerId,
+      { type: 'save', targetId }
+    );
   } catch (e) {
     console.error('submitNightSave 失敗', e);
     alert('夜晚行動失敗: ' + e.message);
   }
 }
+
 
 
 // ================= 顯示夜晚 UI =================
