@@ -518,7 +518,15 @@ async function leaveRoomSafe() {
 
 // ================= 顯示 =================
 // 預設頭像陣列（可以放多個，沒上傳頭像時隨機選）
-const DEFAULT_AVATARS = ['img/roles/像素1.png','img/roles/螢幕擷取畫面 2025-11-11 054212.png','img/roles/Copilot_20251117_205428.png'];
+// 預設頭像陣列
+const DEFAULT_AVATARS = [
+  'img/roles/像素1.png',
+  'img/roles/螢幕擷取畫面 2025-11-11 054212.png',
+  'img/roles/Copilot_20251117_205428.png'
+];
+
+// 記錄玩家ID對應的頭像
+const assignedAvatars = {}; // { playerId: avatarURL }
 
 function updatePlayerList(players) {
   const playerList = document.getElementById('playerList');
@@ -543,8 +551,11 @@ function updatePlayerList(players) {
       ? `<img src="${roleImages[p.role]}" class="role-icon" style="width:24px;height:24px;">`
       : '';
 
-    // 預設頭像
-    const avatar = p.avatar || DEFAULT_AVATARS[p.id.charCodeAt(0) % DEFAULT_AVATARS.length];
+    // 自訂頭像優先，其次檢查 assignedAvatars，有就用，有沒有就隨機分配一個
+    if (!assignedAvatars[p.id]) {
+      assignedAvatars[p.id] = p.avatar || DEFAULT_AVATARS[Math.floor(Math.random() * DEFAULT_AVATARS.length)];
+    }
+    const avatar = assignedAvatars[p.id];
 
     const div = document.createElement('div');
     div.className = 'player-card';
