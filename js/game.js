@@ -125,30 +125,43 @@ async function joinRoom() {
   }
 }
 
-window.lastRoomIds = window.lastRoomIds || []; // 記錄上一次房間 ID
-
+window.lastRoomIds = window.lastRoomIds || [];
 
 async function refreshRoomList() {
   const roomList = document.getElementById('roomList');
   if (!roomList) return console.warn('roomList 容器不存在');
 
-  // 顯示載入中
-  roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">載入中...</div>';
+  // 第一次載入時顯示載入中
+  if (window.lastRoomIds.length === 0) {
+    roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">載入中...</div>';
+  }
 
   try {
     const res = await gameAPI.listRooms();
     console.log('listRooms result raw:', res);
 
-    // 修正：直接用 res（你的 API 回傳就是陣列）
+    // API 直接回陣列
     const rooms = Array.isArray(res) ? res : (res?.data || []);
     console.log('rooms array used:', rooms);
 
+    const newRoomIds = rooms.map(r => r.id);
+
+    // 房間沒變就不更新 DOM
+    if (JSON.stringify(newRoomIds) === JSON.stringify(window.lastRoomIds)) {
+      console.log('房間列表未變，跳過 DOM 更新');
+      return;
+    }
+
+    // 更新 lastRoomIds
+    window.lastRoomIds = newRoomIds;
+
+    // 房間清單空
     if (!rooms.length) {
       roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">目前沒有房間</div>';
       return;
     }
 
-    // 清空列表
+    // 清空舊列表
     roomList.innerHTML = '';
 
     // 建立房間 DOM
