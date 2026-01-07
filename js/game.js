@@ -210,49 +210,22 @@ async function enterGame(roomId, playerId) {
 // ================= 核心輪詢 =================
 // ================= 夜晚 / 投票 UI =================
 // ================= 夜晚操作封裝 =================
-async function submitNightKill(targetId) {
+async function submitNightActionClient(type, targetId) {
   if (!state.roomId || !state.playerId || !targetId) return;
+
   try {
+    // 送給後端 nightAction 參數
     await gameAPI.submitNightAction(
       state.roomId,
       state.playerId,
-      { type: 'kill', targetId }
+      { type, targetId } // ⚡ 確保跟後端對應 nightAction
     );
+    console.log(`夜晚行動送出: ${type} -> ${targetId}`);
   } catch (e) {
-    console.error('submitNightKill 失敗', e);
+    console.error('夜晚行動失敗', e);
     alert('夜晚行動失敗: ' + e.message);
   }
 }
-
-async function submitNightCheck(targetId) {
-  if (!state.roomId || !state.playerId || !targetId) return;
-  try {
-    await gameAPI.submitNightAction(
-      state.roomId,
-      state.playerId,
-      { type: 'check', targetId }
-    );
-  } catch (e) {
-    console.error('submitNightCheck 失敗', e);
-    alert('夜晚行動失敗: ' + e.message);
-  }
-}
-
-async function submitNightSave(targetId) {
-  if (!state.roomId || !state.playerId || !targetId) return;
-  try {
-    await gameAPI.submitNightAction(
-      state.roomId,
-      state.playerId,
-      { type: 'save', targetId }
-    );
-  } catch (e) {
-    console.error('submitNightSave 失敗', e);
-    alert('夜晚行動失敗: ' + e.message);
-  }
-}
-
-
 
 // ================= 顯示夜晚 UI =================
 function showNightUI() {
@@ -270,23 +243,18 @@ function showNightUI() {
     return;
   }
 
-  const players = Object.values(state.latestPlayers).filter(p => p.alive && p.id !== state.playerId);
+  const players = Object.values(state.latestPlayers)
+                      .filter(p => p.alive && p.id !== state.playerId);
   if (players.length === 0) {
     nightActionArea.innerHTML = '<p>沒有其他玩家</p>';
     return;
   }
 
-  // 清除舊按鈕，重新生成
-  nightActionArea.innerHTML = '';
   let titleText = '';
-
-  if (myRole === 'werewolf') {
-    titleText = '選擇殺人目標:';
-  } else if (myRole === 'seer') {
-    titleText = '選擇查驗目標:';
-  } else if (myRole === 'doctor') {
-    titleText = '選擇守護目標:';
-  } else {
+  if (myRole === 'werewolf') titleText = '選擇殺人目標:';
+  else if (myRole === 'seer') titleText = '選擇查驗目標:';
+  else if (myRole === 'doctor') titleText = '選擇守護目標:';
+  else {
     nightActionArea.innerHTML = '<p>等待夜晚結束...</p>';
     return;
   }
@@ -296,21 +264,19 @@ function showNightUI() {
   players.forEach(p => {
     const btn = document.createElement('button');
     btn.textContent = p.name;
-
+    
     btn.onclick = async () => {
       if (!state.roomId || !state.playerId) return;
-      try {
-        if (myRole === 'werewolf') await submitNightKill(p.id);
-        else if (myRole === 'seer') await submitNightCheck(p.id);
-        else if (myRole === 'doctor') await submitNightSave(p.id);
-      } catch (e) {
-        alert('夜晚行動失敗: ' + e.message);
-      }
+
+      if (myRole === 'werewolf') await submitNightActionClient('kill', p.id);
+      else if (myRole === 'seer') await submitNightActionClient('check', p.id);
+      else if (myRole === 'doctor') await submitNightActionClient('save', p.id);
     };
 
     nightActionArea.appendChild(btn);
   });
 }
+
 
 
 
@@ -412,12 +378,11 @@ function ensureStartButton() {
 }
 
 function ensureResolveNightButton() {
-  let nightBtn = document.getElementById('resolveNightBtn');
+  const nightBtn = document.getElementById('resolveNightBtn');
   if (!nightBtn) return console.warn('#resolveNightBtn 不存在');
 
   const me = state.latestPlayers[state.playerId];
 
-  // 永遠顯示
   nightBtn.style.display = 'inline-block';
   nightBtn.disabled = false;
   nightBtn.textContent = '結束夜晚';
@@ -442,7 +407,6 @@ function ensureResolveNightButton() {
     }
   };
 }
-
 
 
 async function pollRoom() {
