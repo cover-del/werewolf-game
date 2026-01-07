@@ -125,35 +125,32 @@ async function joinRoom() {
   }
 }
 
+
 window.lastRoomIds = window.lastRoomIds || [];
+window.firstLoad = window.firstLoad !== false; // 第一次載入標誌
 
 async function refreshRoomList() {
   const roomList = document.getElementById('roomList');
   if (!roomList) return console.warn('roomList 容器不存在');
 
   // 第一次載入時顯示載入中
-  if (window.lastRoomIds.length === 0) {
+  if (window.firstLoad) {
     roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">載入中...</div>';
   }
 
   try {
     const res = await gameAPI.listRooms();
-    console.log('listRooms result raw:', res);
-
-    // API 直接回陣列
     const rooms = Array.isArray(res) ? res : (res?.data || []);
-    console.log('rooms array used:', rooms);
-
     const newRoomIds = rooms.map(r => r.id);
 
-    // 房間沒變就不更新 DOM
+    // 房間列表沒變就跳過 DOM 更新
     if (JSON.stringify(newRoomIds) === JSON.stringify(window.lastRoomIds)) {
-      console.log('房間列表未變，跳過 DOM 更新');
+      window.firstLoad = false;
       return;
     }
 
-    // 更新 lastRoomIds
     window.lastRoomIds = newRoomIds;
+    window.firstLoad = false;
 
     // 房間清單空
     if (!rooms.length) {
@@ -166,8 +163,6 @@ async function refreshRoomList() {
 
     // 建立房間 DOM
     rooms.forEach(room => {
-      console.log('adding room to DOM:', room.id, room.hostName, room.playerCount);
-
       const div = document.createElement('div');
       div.className = 'room-item';
       div.innerHTML = `
@@ -185,6 +180,7 @@ async function refreshRoomList() {
     roomList.innerHTML = '<div style="text-align:center;color:red;padding:20px;">刷新房間列表失敗</div>';
   }
 }
+
 
 
 
