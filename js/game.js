@@ -127,6 +127,7 @@ async function joinRoom() {
 }
 
 let lastRoomIds = []; // 記錄上一次房間 ID
+let lastRoomIds = []; // 記錄上一次房間 ID
 
 async function refreshRoomList() {
   const roomList = document.getElementById('roomList');
@@ -138,14 +139,18 @@ async function refreshRoomList() {
 
   try {
     const res = await gameAPI.listRooms();
-    const rooms = Object.values(res?.data || {});
+    const rooms = res?.data || [];
+
+    // 取得房間 ID 陣列
     const newRoomIds = rooms.map(r => r.id);
 
     // 房間列表沒變就不用更新
     if (JSON.stringify(lastRoomIds) === JSON.stringify(newRoomIds)) return;
     lastRoomIds = newRoomIds;
 
+    // 清空房間列表
     roomList.innerHTML = '';
+
     if (rooms.length === 0) {
       roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">目前沒有房間</div>';
       return;
@@ -158,16 +163,19 @@ async function refreshRoomList() {
       div.innerHTML = `
         <div class="room-info">
           <div class="room-id">房號: ${room.id}</div>
-          <div class="room-detail">房主: ${room.hostName || '-'} | 玩家: ${Object.keys(room.players || {}).length}</div>
+          <div class="room-detail">房主: ${room.hostName || '-'} | 玩家: ${room.playerCount}</div>
         </div>
         <button class="room-join-btn" onclick="document.getElementById('joinRoomId').value='${room.id}'; joinRoom();">加入</button>
       `;
       roomList.appendChild(div);
     });
-  } catch {
+
+  } catch (err) {
+    console.error('refreshRoomList 失敗', err);
     roomList.innerHTML = '<div style="text-align:center;color:red;padding:20px;">刷新房間列表失敗</div>';
   }
 }
+
 
 async function waitRoomExist(roomId, playerId) {
   try {
