@@ -125,13 +125,17 @@ async function joinRoom() {
   }
 }
 
-let lastRoomIds = []; // 記錄上一次房間 ID
+window.lastRoomIds = window.lastRoomIds || []; // 記錄上一次房間 ID
+
 
 async function refreshRoomList() {
   const roomList = document.getElementById('roomList');
 
-  // 如果第一次載入，顯示載入中
-  if (lastRoomIds.length === 0) {
+  // 初始化全域 lastRoomIds
+  window.lastRoomIds = window.lastRoomIds || [];
+
+  // 第一次載入顯示載入中
+  if (window.lastRoomIds.length === 0) {
     roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">載入中...</div>';
   }
 
@@ -143,8 +147,10 @@ async function refreshRoomList() {
     const newRoomIds = rooms.map(r => r.id);
 
     // 房間列表沒變就不用更新
-    if (JSON.stringify(lastRoomIds) === JSON.stringify(newRoomIds)) return;
-    lastRoomIds = newRoomIds;
+    if (JSON.stringify(window.lastRoomIds) === JSON.stringify(newRoomIds)) return;
+
+    // 更新上一次房間 ID
+    window.lastRoomIds = newRoomIds;
 
     // 清空房間列表
     roomList.innerHTML = '';
@@ -173,6 +179,7 @@ async function refreshRoomList() {
     roomList.innerHTML = '<div style="text-align:center;color:red;padding:20px;">刷新房間列表失敗</div>';
   }
 }
+
 
 
 async function waitRoomExist(roomId, playerId) {
