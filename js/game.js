@@ -132,23 +132,29 @@ async function refreshRoomList() {
   const roomList = document.getElementById('roomList');
   if (!roomList) return console.warn('roomList 容器不存在');
 
+  // 顯示載入中
   roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">載入中...</div>';
 
   try {
     const res = await gameAPI.listRooms();
-    console.log('listRooms result:', res);
+    console.log('listRooms result raw:', res);
 
-    // ✅ 修正：直接用 res（因為你的 API 回傳就是陣列）
+    // 修正：直接用 res（你的 API 回傳就是陣列）
     const rooms = Array.isArray(res) ? res : (res?.data || []);
-    console.log('rooms array:', rooms);
+    console.log('rooms array used:', rooms);
 
     if (!rooms.length) {
       roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">目前沒有房間</div>';
       return;
     }
 
+    // 清空列表
     roomList.innerHTML = '';
+
+    // 建立房間 DOM
     rooms.forEach(room => {
+      console.log('adding room to DOM:', room.id, room.hostName, room.playerCount);
+
       const div = document.createElement('div');
       div.className = 'room-item';
       div.innerHTML = `
