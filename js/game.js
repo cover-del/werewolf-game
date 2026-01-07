@@ -127,7 +127,6 @@ async function joinRoom() {
 }
 
 let lastRoomIds = []; // 記錄上一次房間 ID
-let lastRoomIds = []; // 記錄上一次房間 ID
 
 async function refreshRoomList() {
   const roomList = document.getElementById('roomList');
