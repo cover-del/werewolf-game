@@ -571,7 +571,35 @@ async function submitMyVote(targetId) {
 async function assignRoles() { await gameAPI.assignRoles(state.roomId, state.playerId); }
 async function resolveNight() { try { await gameAPI.resolveNight(state.roomId, state.playerId); } catch(e){} }
 async function resolveVotes() { try { await gameAPI.resolveVotes(state.roomId, state.playerId); } catch(e){} }
-async function sendChat() { const input=document.getElementById('chatInput'); if (!input.value.trim()) return; await gameAPI.postChat(state.roomId, state.playerId, input.value.trim()); input.value=''; }
+async function sendChat() { 
+  const input = document.getElementById('chatInput'); 
+  if (!input || !input.value.trim()) return;
+
+  const msg = input.value.trim();
+  input.value = ''; // 先清空輸入框，避免重複送出
+
+  try {
+    const res = await gameAPI.postChat(state.roomId, state.playerId, msg);
+    const data = res?.data || res;
+
+    if (data?.error) {
+      console.error('聊天室送訊失敗', data.error);
+      alert('訊息送出失敗：' + data.error);
+    } else {
+      // 立即在前端加一條訊息，避免要等 pollRoom
+      const chatBox = document.getElementById('chatBox');
+      const div = document.createElement('div');
+      div.className = 'chat-msg';
+      div.textContent = `我: ${msg}`;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+  } catch (e) {
+    console.error('聊天室送訊失敗', e);
+    alert('訊息送出失敗: ' + e.message);
+  }
+}
+
 async function leaveRoom() { await gameAPI.leaveRoom(state.roomId, state.playerId); localStorage.removeItem(CONFIG.STORAGE_KEYS.roomId); localStorage.removeItem(CONFIG.STORAGE_KEYS.playerId); clearInterval(pollTimer); location.reload(); }
 
 // ================= 頭像 =================
