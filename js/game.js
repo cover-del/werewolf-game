@@ -126,14 +126,15 @@ async function joinRoom() {
 }
 
 
+
 window.lastRoomIds = window.lastRoomIds || [];
-window.firstLoad = window.firstLoad !== false; // 第一次載入標誌
+window.firstLoad = window.firstLoad !== false;
 
 async function refreshRoomList() {
   const roomList = document.getElementById('roomList');
   if (!roomList) return console.warn('roomList 容器不存在');
 
-  // 第一次載入時顯示載入中
+  // 第一次載入顯示載入中
   if (window.firstLoad) {
     roomList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">載入中...</div>';
   }
@@ -143,7 +144,7 @@ async function refreshRoomList() {
     const rooms = Array.isArray(res) ? res : (res?.data || []);
     const newRoomIds = rooms.map(r => r.id);
 
-    // 房間列表沒變就跳過 DOM 更新
+    // 房間列表沒變就跳過更新，避免閃爍
     if (JSON.stringify(newRoomIds) === JSON.stringify(window.lastRoomIds)) {
       window.firstLoad = false;
       return;
@@ -180,6 +181,7 @@ async function refreshRoomList() {
     roomList.innerHTML = '<div style="text-align:center;color:red;padding:20px;">刷新房間列表失敗</div>';
   }
 }
+
 
 
 
