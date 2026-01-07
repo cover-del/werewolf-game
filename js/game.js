@@ -16,7 +16,6 @@ let roomFailCount = 0;
 let resolvingDay = false;
 
 // ================= 初始化 =================
-// ================= 初始化 =================
 document.addEventListener('DOMContentLoaded', async function () {
   const playId = localStorage.getItem(CONFIG.STORAGE_KEYS.playId);
   const playerName = localStorage.getItem(CONFIG.STORAGE_KEYS.playerName);
